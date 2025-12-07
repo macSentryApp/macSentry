@@ -809,9 +809,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 1
     elif not args.skip_validation:
         # Still validate but silently
-        from utils.system_info import validate_system_requirements
-        is_valid, _ = validate_system_requirements()
-        if not is_valid:
+        reqs = validate_system_requirements()
+        if not reqs.passed:
             return 1
 
     # Load checks
