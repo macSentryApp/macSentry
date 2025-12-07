@@ -1,0 +1,47 @@
+# Flake8 Configuration - Strict Mode
+[flake8]
+max-line-length = 100
+max-complexity = 10
+select = 
+    # pycodestyle errors
+    E,
+    # pycodestyle warnings
+    W,
+    # pyflakes
+    F,
+    # flake8-bugbear
+    B,
+    # flake8-comprehensions
+    C4,
+    # flake8-simplify
+    SIM,
+
+ignore = 
+    # line too long (handled by formatter)
+    E501,
+    # line break before binary operator (conflicts with black)
+    W503,
+
+per-file-ignores =
+    # Allow unused imports in __init__.py
+    __init__.py: F401
+    # Allow assert in tests
+    tests/*.py: S101
+
+exclude =
+    .git,
+    __pycache__,
+    .venv,
+    venv,
+    build,
+    dist,
+    *.egg-info,
+
+# Show source code for each error
+show-source = true
+
+# Count errors
+count = true
+
+# Statistics
+statistics = true

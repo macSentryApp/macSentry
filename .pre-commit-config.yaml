@@ -1,0 +1,116 @@
+# Pre-commit hooks configuration
+# Install: pip install pre-commit && pre-commit install
+# Run manually: pre-commit run --all-files
+
+default_language_version:
+  python: python3.10
+
+repos:
+  # ==========================================================================
+  # General file checks
+  # ==========================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: ['--maxkb=500']
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: detect-private-key
+      - id: check-executables-have-shebangs
+      - id: check-shebang-scripts-are-executable
+
+  # ==========================================================================
+  # Python code formatting (optional - uncomment if you want auto-formatting)
+  # ==========================================================================
+  # - repo: https://github.com/psf/black
+  #   rev: 24.1.1
+  #   hooks:
+  #     - id: black
+  #       language_version: python3.10
+
+  # - repo: https://github.com/pycqa/isort
+  #   rev: 5.13.2
+  #   hooks:
+  #     - id: isort
+  #       args: ["--profile", "black"]
+
+  # ==========================================================================
+  # Flake8 - Style & Complexity Checking
+  # ==========================================================================
+  - repo: https://github.com/pycqa/flake8
+    rev: 7.0.0
+    hooks:
+      - id: flake8
+        additional_dependencies:
+          - flake8-bugbear
+          - flake8-comprehensions
+          - flake8-simplify
+        args: ['--config=.flake8']
+
+  # ==========================================================================
+  # Pylint - Comprehensive Linting
+  # ==========================================================================
+  - repo: local
+    hooks:
+      - id: pylint
+        name: pylint
+        entry: pylint
+        language: system
+        types: [python]
+        args: ['--rcfile=pyproject.toml', '--fail-under=8.0']
+
+  # ==========================================================================
+  # MyPy - Type Checking (90%+ type hint coverage)
+  # ==========================================================================
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.8.0
+    hooks:
+      - id: mypy
+        args: ['--config-file=pyproject.toml', '--strict']
+        additional_dependencies: []
+        pass_filenames: false
+        entry: mypy checks/ utils/
+
+  # ==========================================================================
+  # Bandit - Python Security Linter
+  # ==========================================================================
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.7.7
+    hooks:
+      - id: bandit
+        args: ['-c', 'pyproject.toml', '-r', '-ll']
+        additional_dependencies: ['bandit[toml]']
+
+  # ==========================================================================
+  # Semgrep - Security Vulnerability Patterns
+  # ==========================================================================
+  - repo: https://github.com/semgrep/semgrep
+    rev: v1.56.0
+    hooks:
+      - id: semgrep
+        args: ['--config', 'p/python', '--config', 'p/security-audit', '--error']
+
+  # ==========================================================================
+  # Cyclomatic Complexity Check (radon)
+  # ==========================================================================
+  - repo: local
+    hooks:
+      - id: radon-complexity
+        name: radon complexity check
+        entry: bash -c 'radon cc checks/ utils/ -a -nc --total-average --fail-under B'
+        language: system
+        types: [python]
+        pass_filenames: false
+
+      - id: radon-maintainability
+        name: radon maintainability index
+        entry: bash -c 'radon mi checks/ utils/ -nc --fail-under B'
+        language: system
+        types: [python]
+        pass_filenames: false

@@ -1,0 +1,30 @@
+# Bandit Security Linter Configuration
+# Run: bandit -r checks/ utils/ -c .bandit
+
+[bandit]
+# Directories to scan
+targets = checks,utils
+
+# Exclude test files from security scanning
+exclude_dirs = tests,venv,.venv
+
+# Report all severity levels
+severity = all
+
+# Report all confidence levels
+confidence = all
+
+# Skip specific tests (use sparingly - document why)
+skips =
+    # B101: assert used - acceptable in type narrowing
+    # B404: import subprocess - required for system commands
+    # B603: subprocess call - required for system commands (we validate inputs)
+
+# Aggregate output by filename
+aggregate = file
+
+# Output format
+format = txt
+
+# Show code context
+show_code = true

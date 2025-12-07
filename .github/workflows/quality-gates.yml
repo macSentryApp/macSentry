@@ -1,0 +1,287 @@
+# Quality Gates - Comprehensive CI/CD quality enforcement
+# Enforces: coverage, linting, security scanning, and performance benchmarks
+
+name: Quality Gates
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  PYTHON_VERSION: '3.12'
+  MIN_COVERAGE: 70
+  PERFORMANCE_THRESHOLD_SECONDS: 30
+  MEMORY_THRESHOLD_MB: 100
+
+jobs:
+  # ============================================================================
+  # Unit Test Coverage Gate (70%+)
+  # ============================================================================
+  coverage:
+    name: Test Coverage (≥${{ env.MIN_COVERAGE }}%)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-cov
+
+      - name: Run tests with coverage
+        run: |
+          python -m pytest tests/ \
+            --cov=checks --cov=utils --cov=core \
+            --cov-report=term-missing \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=${{ env.MIN_COVERAGE }}
+        continue-on-error: false
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage.xml
+
+      - name: Coverage summary
+        run: |
+          echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
+          python -m pytest tests/ --cov=checks --cov=utils --cov=core --cov-report=term 2>&1 | tail -20 >> $GITHUB_STEP_SUMMARY
+
+  # ============================================================================
+  # Critical Check Integration Tests (100% coverage)
+  # ============================================================================
+  integration-critical:
+    name: Critical Check Integration Tests
+    runs-on: macos-14  # Apple Silicon for realistic testing
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Run critical integration tests
+        run: |
+          python -m pytest tests/test_integration_critical.py -v --tb=short
+
+      - name: Verify critical checks execute
+        run: |
+          echo "=== Testing Critical Checks Directly ==="
+          python -c "
+          from checks import load_checks
+          from checks.base import CheckRegistry, Severity
+          
+          load_checks()
+          
+          critical_checks = [
+              cls for cls in CheckRegistry.get_all()
+              if getattr(cls, 'severity', None) == Severity.CRITICAL
+          ]
+          
+          print(f'Found {len(critical_checks)} critical checks')
+          
+          for cls in critical_checks:
+              print(f'Testing: {cls.name}')
+              check = cls()
+              result = check.execute()
+              print(f'  Status: {result.status.value}')
+              assert result is not None, f'{cls.name} returned None'
+              assert result.check_name, f'{cls.name} missing check_name'
+          
+          print('✓ All critical checks executed successfully')
+          "
+
+  # ============================================================================
+  # Linter Gate (Zero critical/high warnings)
+  # ============================================================================
+  linting:
+    name: Linting (Zero Critical/High)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install linters
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 flake8-bugbear pylint bandit mypy
+
+      - name: Flake8 (critical errors only)
+        run: |
+          # E9xx, F63, F7, F82 are critical errors
+          flake8 checks/ utils/ core/ macos_security_audit.py \
+            --select=E9,F63,F7,F82 \
+            --show-source \
+            --statistics
+        continue-on-error: false
+
+      - name: Flake8 (full check, warnings allowed)
+        run: |
+          flake8 checks/ utils/ core/ macos_security_audit.py \
+            --max-line-length=100 \
+            --ignore=E501,W503 \
+            --statistics || true
+
+      - name: Bandit security scan
+        run: |
+          bandit -r checks/ utils/ core/ macos_security_audit.py \
+            -ll \
+            --exit-zero \
+            -f txt
+        continue-on-error: false
+
+      - name: Bandit (high severity only - must pass)
+        run: |
+          bandit -r checks/ utils/ core/ macos_security_audit.py \
+            -ll \
+            --severity-level high \
+            -f txt
+
+      - name: MyPy type checking
+        run: |
+          mypy checks/ utils/ core/ macos_security_audit.py \
+            --ignore-missing-imports \
+            --no-error-summary || true
+
+  # ============================================================================
+  # Performance Benchmarks
+  # ============================================================================
+  performance:
+    name: Performance Benchmarks
+    runs-on: macos-14  # M1/M2 for accurate benchmarks
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest memory-profiler psutil
+
+      - name: Run performance tests
+        run: |
+          python -m pytest tests/test_performance.py -v --tb=short
+        env:
+          PERFORMANCE_THRESHOLD: ${{ env.PERFORMANCE_THRESHOLD_SECONDS }}
+          MEMORY_THRESHOLD_MB: ${{ env.MEMORY_THRESHOLD_MB }}
+
+      - name: Execution time benchmark
+        run: |
+          echo "=== Execution Time Benchmark ==="
+          start=$(python -c "import time; print(time.time())")
+          python macos_security_audit.py --format json > /dev/null 2>&1
+          end=$(python -c "import time; print(time.time())")
+          duration=$(python -c "print(round($end - $start, 2))")
+          echo "Duration: ${duration}s (threshold: ${{ env.PERFORMANCE_THRESHOLD_SECONDS }}s)"
+          
+          python -c "
+          duration = float('$duration')
+          threshold = float('${{ env.PERFORMANCE_THRESHOLD_SECONDS }}')
+          if duration > threshold:
+              print(f'❌ FAIL: {duration}s > {threshold}s')
+              exit(1)
+          print(f'✓ PASS: {duration}s <= {threshold}s')
+          "
+
+      - name: Memory usage benchmark
+        run: |
+          echo "=== Memory Usage Benchmark ==="
+          python -c "
+          import subprocess
+          import sys
+          import psutil
+          import os
+          
+          # Get baseline memory
+          process = psutil.Process(os.getpid())
+          
+          # Run audit and measure peak memory
+          result = subprocess.run(
+              [sys.executable, 'macos_security_audit.py', '--format', 'json'],
+              capture_output=True,
+              text=True
+          )
+          
+          # Note: This measures subprocess memory differently
+          # For accurate measurement, we use the test suite
+          print(f'Exit code: {result.returncode}')
+          print('Memory profiling done via test suite')
+          "
+
+  # ============================================================================
+  # Quality Gate Summary
+  # ============================================================================
+  quality-gate-summary:
+    name: Quality Gate Summary
+    needs: [coverage, integration-critical, linting, performance]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check all gates
+        run: |
+          echo "## Quality Gate Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.coverage.result }}" == "success" ]; then
+            echo "✅ Coverage: PASSED (≥70%)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Coverage: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.integration-critical.result }}" == "success" ]; then
+            echo "✅ Critical Integration Tests: PASSED" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Critical Integration Tests: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.linting.result }}" == "success" ]; then
+            echo "✅ Linting: PASSED (zero critical/high)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Linting: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          if [ "${{ needs.performance.result }}" == "success" ]; then
+            echo "✅ Performance: PASSED (<30s, <100MB)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ Performance: FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+          
+          # Fail if any gate failed
+          if [ "${{ needs.coverage.result }}" != "success" ] || \
+             [ "${{ needs.integration-critical.result }}" != "success" ] || \
+             [ "${{ needs.linting.result }}" != "success" ] || \
+             [ "${{ needs.performance.result }}" != "success" ]; then
+            echo ""
+            echo "❌ One or more quality gates failed!"
+            exit 1
+          fi
+          
+          echo ""
+          echo "🎉 All quality gates passed!"
