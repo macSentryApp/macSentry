@@ -3,11 +3,10 @@ from __future__ import annotations
 
 import shlex
 from pathlib import Path
-from subprocess import TimeoutExpired
 from typing import Iterable, List
 
 from checks.base import CheckResult, SecurityCheck, Severity, Status
-from utils.commands import run_command
+from utils.commands import run_command, CommandTimeoutError
 
 _APPLICATIONS_DIRS: tuple[Path, ...] = (Path("/Applications"), Path.home() / "Applications")
 _MAX_APPS_TO_SCAN = 25
@@ -61,7 +60,7 @@ class UnsignedApplicationsCheck(SecurityCheck):
             cmd = ["/usr/bin/codesign", "--verify", "--deep", "--strict", str(app_path)]
             try:
                 result = run_command(cmd, timeout=15)
-            except TimeoutExpired:
+            except CommandTimeoutError:
                 errors[str(app_path)] = "codesign verification timed out"
                 continue
             except FileNotFoundError:
@@ -276,7 +275,7 @@ class DangerousEntitlementsCheck(SecurityCheck):
             ]
             try:
                 result = run_command(cmd, timeout=15)
-            except TimeoutExpired:
+            except CommandTimeoutError:
                 errors[str(app_path)] = "Entitlement extraction timed out"
                 continue
             except FileNotFoundError:
@@ -436,7 +435,7 @@ class QuarantineEnforcementCheck(SecurityCheck):
                 remediation=self.remediation,
                 details={},
             )
-        except TimeoutExpired:
+        except CommandTimeoutError:
             return CheckResult(
                 check_name=self.name,
                 status=Status.ERROR,

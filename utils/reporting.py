@@ -229,8 +229,9 @@ def format_html_report(
         )
 
     system_table = "".join(
-        f"<li><strong>{html.escape(key)}:</strong> {html.escape(value)}</li>"
+        f"<li><strong>{html.escape(key)}:</strong> {html.escape(str(value) if not isinstance(value, str) else value)}</li>"
         for key, value in system_info.items()
+        if not isinstance(value, dict)  # Skip nested dicts like 'hardware'
     )
 
     html_doc = f"""<!DOCTYPE html>

@@ -507,7 +507,7 @@ def _render_report(
 
 def _print_dry_run(checks: Sequence[SecurityCheck], console: Console) -> None:
     """Display checks that would be executed in dry-run mode."""
-    console.subheader("Checks to be executed (dry-run)")
+    console.subheader("Checks that would be executed (dry-run)")
     
     # Group by category
     by_category: dict[str, List[SecurityCheck]] = {}
