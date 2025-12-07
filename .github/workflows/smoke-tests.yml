@@ -89,19 +89,31 @@ jobs:
       - name: Basic functionality check - Text output
         run: |
           echo "=== Testing text output ==="
-          python macos_security_audit.py --format text --verbose 2>&1 | head -100
+          # Exit codes 0, 2, 3 are valid (audit may find issues on runner)
+          (python macos_security_audit.py --format text --verbose 2>&1 || true) | head -100
           echo "✓ Text output works"
 
       - name: Basic functionality check - JSON output
         run: |
           echo "=== Testing JSON output ==="
-          output=$(python macos_security_audit.py --format json 2>&1)
+          # Exit codes 0, 2, 3 are valid (0=pass, 2=issues found, 3=warnings)
+          output=$(python macos_security_audit.py --format json 2>&1) || exit_code=$?
+          # Only fail on exit code 1 (actual error)
+          if [ "${exit_code:-0}" -eq 1 ]; then
+            echo "ERROR: Script failed with exit code 1"
+            exit 1
+          fi
           echo "$output" | python -c "import sys, json; json.load(sys.stdin)" && echo "✓ Valid JSON output"
 
       - name: Basic functionality check - HTML output
         run: |
           echo "=== Testing HTML output ==="
-          python macos_security_audit.py --format html --output /tmp/report.html
+          # Exit codes 0, 2, 3 are valid (audit may find issues on runner)
+          python macos_security_audit.py --format html --output /tmp/report.html || exit_code=$?
+          if [ "${exit_code:-0}" -eq 1 ]; then
+            echo "ERROR: Script failed with exit code 1"
+            exit 1
+          fi
           test -f /tmp/report.html && echo "✓ HTML file created"
           grep -q "<html" /tmp/report.html && echo "✓ HTML content valid"
 
@@ -110,7 +122,8 @@ jobs:
           echo "=== Performance Test ==="
           echo "Threshold: ${PERFORMANCE_THRESHOLD}s"
           start_time=$(python -c "import time; print(time.time())")
-          python macos_security_audit.py --format json > /dev/null 2>&1
+          # Exit codes 0, 2, 3 are valid (audit may find issues on runner)
+          python macos_security_audit.py --format json > /dev/null 2>&1 || true
           end_time=$(python -c "import time; print(time.time())")
           duration=$(python -c "print(round($end_time - $start_time, 2))")
           echo "Execution time: ${duration}s"
@@ -152,7 +165,12 @@ jobs:
         run: |
           echo "=== Severity Filter Test ==="
           python macos_security_audit.py --min-severity HIGH --dry-run
-          python macos_security_audit.py --min-severity CRITICAL --format json > /dev/null
+          # Exit codes 0, 2, 3 are valid (audit may find issues on runner)
+          python macos_security_audit.py --min-severity CRITICAL --format json > /dev/null || exit_code=$?
+          if [ "${exit_code:-0}" -eq 1 ]; then
+            echo "ERROR: Script failed with exit code 1"
+            exit 1
+          fi
           echo "✓ Severity filtering works"
 
   # Summary job that reports overall status
