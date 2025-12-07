@@ -790,6 +790,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     else:
         verbosity = VERBOSITY_NORMAL
     
+    # Force quiet mode for machine-readable formats to stdout
+    # (JSON/HTML without output file should only print the report)
+    if args.format in ("json", "html") and not args.output:
+        verbosity = VERBOSITY_QUIET
+    
     # Initialize console
     console = Console()
     
@@ -798,19 +803,32 @@ def main(argv: Sequence[str] | None = None) -> int:
         console.banner(compact=True)
         console.blank()
     
-    # Validate system requirements
-    if not _validate_and_display_requirements(console, args.skip_validation):
-        return 1
+    # Validate system requirements (skip display for machine-readable output)
+    if verbosity > VERBOSITY_QUIET:
+        if not _validate_and_display_requirements(console, args.skip_validation):
+            return 1
+    elif not args.skip_validation:
+        # Still validate but silently
+        from utils.system_info import validate_system_requirements
+        is_valid, _ = validate_system_requirements()
+        if not is_valid:
+            return 1
 
     # Load checks
-    with Spinner("Loading security checks...") as spinner:
+    if verbosity > VERBOSITY_QUIET:
+        with Spinner("Loading security checks...") as spinner:
+            try:
+                load_checks()
+                time.sleep(0.2)  # Brief pause for visual effect
+            except ImportError as exc:
+                spinner.stop(f"Failed to load checks: {exc}", Icons.FAIL, Theme.ERROR)
+                return 1
+            spinner.stop("Security checks loaded", Icons.PASS, Theme.SUCCESS)
+    else:
         try:
             load_checks()
-            time.sleep(0.2)  # Brief pause for visual effect
-        except ImportError as exc:
-            spinner.stop(f"Failed to load checks: {exc}", Icons.FAIL, Theme.ERROR)
+        except ImportError:
             return 1
-        spinner.stop("Security checks loaded", Icons.PASS, Theme.SUCCESS)
     
     # System info - use extended info for better hardware detection
     system_info = get_extended_system_info()
@@ -875,13 +893,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     if options.show_timing and run_result.timings:
         _display_timing_breakdown(run_result, console)
     
-    # Summary
+    # Summary (skip for machine-readable output)
     stats = _collect_stats(run_result.results)
-    console.summary_box(stats)
-    
-    if verbosity >= VERBOSITY_NORMAL:
-        console.severity_breakdown(stats)
-    console.blank()
+    if verbosity > VERBOSITY_QUIET:
+        console.summary_box(stats)
+        if verbosity >= VERBOSITY_NORMAL:
+            console.severity_breakdown(stats)
+        console.blank()
 
     # Check if this is the first run
     is_first_run = _is_first_run()
@@ -926,22 +944,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (CommandExecutionError, OSError) as exc:
             console.error(f"Failed to save report: {exc}")
             return 1
-    
-    # Show first-run tips if applicable
-    if is_first_run and verbosity >= VERBOSITY_NORMAL:
-        _display_first_run_tips(console, output_options.output_path)
-        _mark_first_run_complete()
-    
-    # Generate recommended actions from failures/warnings
-    _display_recommended_actions(run_result.results, console, options)
-    
-    # Show performance metrics in verbose mode
-    if options.show_timing and run_result.timings:
-        slowest = [
-            (t.check_name, t.elapsed_time, _get_check_timing_reason(t.check_name))
-            for t in run_result.get_slowest_checks(5)
-        ]
-        console.performance_metrics(run_result.total_elapsed, slowest)
+    elif output_options.format in ("json", "html"):
+        # Print JSON/HTML to stdout when no output file specified
+        report = _render_report(
+            results=run_result.results,
+            system_info=system_info,
+            options=options,
+            output_options=output_options,
+        )
+        print(report)
     
     # Determine exit code based on results
     # 0 = All checks passed
@@ -950,15 +961,35 @@ def main(argv: Sequence[str] | None = None) -> int:
     # 3 = Errors during execution
     exit_code = _determine_exit_code(stats)
     
-    # Final status
-    if exit_code == 3:
-        console.error(f"Scan completed with {stats['error']} errors")
-    elif exit_code == 2:
-        console.warning(f"Scan completed with {stats['fail']} critical/high issues")
-    elif exit_code == 1:
-        console.dim(f"Scan completed with warnings (review recommended)")
-    else:
-        console.success(f"Security scan completed successfully in {run_result.total_elapsed:.1f}s")
+    # Skip CLI decorations for machine-readable formats (JSON/HTML to stdout)
+    is_machine_readable = output_options.format in ("json", "html") and not output_options.output_path
+    
+    if not is_machine_readable:
+        # Show first-run tips if applicable
+        if is_first_run and verbosity >= VERBOSITY_NORMAL:
+            _display_first_run_tips(console, output_options.output_path)
+            _mark_first_run_complete()
+        
+        # Generate recommended actions from failures/warnings
+        _display_recommended_actions(run_result.results, console, options)
+        
+        # Show performance metrics in verbose mode
+        if options.show_timing and run_result.timings:
+            slowest = [
+                (t.check_name, t.elapsed_time, _get_check_timing_reason(t.check_name))
+                for t in run_result.get_slowest_checks(5)
+            ]
+            console.performance_metrics(run_result.total_elapsed, slowest)
+        
+        # Final status
+        if exit_code == 3:
+            console.error(f"Scan completed with {stats['error']} errors")
+        elif exit_code == 2:
+            console.warning(f"Scan completed with {stats['fail']} critical/high issues")
+        elif exit_code == 1:
+            console.dim(f"Scan completed with warnings (review recommended)")
+        else:
+            console.success(f"Security scan completed successfully in {run_result.total_elapsed:.1f}s")
     
     return exit_code
 
