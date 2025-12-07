@@ -10,11 +10,28 @@ from utils.commands import run_command, CommandTimeoutError
 
 _APPLICATIONS_DIRS: tuple[Path, ...] = (Path("/Applications"), Path.home() / "Applications")
 _MAX_APPS_TO_SCAN = 25
+_MAX_APP_SIZE_GB = 2  # Skip apps larger than this (e.g., Xcode ~10GB takes forever to verify)
+
+
+def _get_app_size_bytes(app_path: Path) -> int:
+    """Get approximate size of app bundle (sum of file sizes)."""
+    try:
+        total = 0
+        for f in app_path.rglob("*"):
+            if f.is_file():
+                total += f.stat().st_size
+                # Early exit if already over threshold
+                if total > _MAX_APP_SIZE_GB * 1024 * 1024 * 1024:
+                    return total
+        return total
+    except (OSError, PermissionError):
+        return 0
 
 
 def _iter_app_bundles() -> Iterable[Path]:
     counted = 0
     seen: set[Path] = set()
+    max_size = _MAX_APP_SIZE_GB * 1024 * 1024 * 1024
     for base_dir in _APPLICATIONS_DIRS:
         if not base_dir.exists():
             continue
@@ -25,6 +42,9 @@ def _iter_app_bundles() -> Iterable[Path]:
                 continue
             real_path = entry.resolve()
             if real_path in seen:
+                continue
+            # Skip very large apps (e.g., Xcode) - codesign --deep takes too long
+            if _get_app_size_bytes(real_path) > max_size:
                 continue
             seen.add(real_path)
             counted += 1
