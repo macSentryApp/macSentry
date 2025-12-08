@@ -24,7 +24,7 @@ This document provides step-by-step remediation instructions for all security fi
 
 **If FAIL:** Full-disk encryption is not enabled.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > Privacy & Security > FileVault > Turn On
 ```
@@ -40,12 +40,12 @@ System Settings > Privacy & Security > FileVault > Turn On
 
 **If FAIL:** External drives are mounted without encryption.
 
-**GUI Remediation (new disk):**
+**Manual Remediation (new disk):**
 ```
 Disk Utility > Select external drive > Erase > Choose "APFS (Encrypted)"
 ```
 
-**GUI Remediation (existing disk):**
+**Manual Remediation (existing disk):**
 ```
 Right-click volume in Finder > Encrypt "[Volume Name]"
 ```
@@ -62,7 +62,7 @@ Right-click volume in Finder > Encrypt "[Volume Name]"
 
 **If FAIL:** Incoming connections are not filtered.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > Network > Firewall > Turn On
 ```
@@ -78,7 +78,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setglobalstate on
 
 **If FAIL:** Mac responds to network probes.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > Network > Firewall > Options > Enable Stealth Mode
 ```
@@ -94,7 +94,7 @@ sudo /usr/libexec/ApplicationFirewall/socketfilterfw --setstealthmode on
 
 **If FAIL:** SSH is enabled and accepting connections.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > General > Sharing > Remote Login > Off
 ```
@@ -110,7 +110,7 @@ System Settings > General > Sharing > Remote Login > Off
 
 **If FAIL:** VNC screen sharing is enabled.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > General > Sharing > Screen Sharing > Off
 ```
@@ -121,7 +121,7 @@ System Settings > General > Sharing > Screen Sharing > Off
 
 **If FAIL:** Apple Remote Desktop is enabled.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > General > Sharing > Remote Management > Off
 ```
@@ -132,7 +132,7 @@ System Settings > General > Sharing > Remote Management > Off
 
 **If WARNING:** AirDrop is set to "Everyone".
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 Control Center > AirDrop > Contacts Only
 ```
@@ -181,7 +181,7 @@ defaults write com.apple.sharingd DiscoverableMode -string "Contacts Only"
 sudo spctl --master-enable
 ```
 
-**GUI Verification:**
+**Manual Verification:**
 ```
 System Settings > Privacy & Security > Allow apps from: App Store and identified developers
 ```
@@ -197,7 +197,7 @@ System Settings > Privacy & Security > Allow apps from: App Store and identified
 softwareupdate --background
 ```
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > General > Software Update > Check for updates
 ```
@@ -224,7 +224,7 @@ System Settings > General > Software Update > Install available updates
 softwareupdate -ia
 ```
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > General > Software Update > Update Now
 ```
@@ -235,7 +235,7 @@ System Settings > General > Software Update > Update Now
 
 **If WARNING:** Automatic updates are partially or fully disabled.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > General > Software Update > Automatic Updates
   ✓ Check for updates
@@ -253,7 +253,7 @@ System Settings > General > Software Update > Automatic Updates
 
 **If FAIL:** A user is configured for automatic login.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > Users & Groups > Login Options > Automatic login: Off
 ```
@@ -264,7 +264,7 @@ System Settings > Users & Groups > Login Options > Automatic login: Off
 
 **If FAIL:** Guest account is enabled.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > Users & Groups > Guest User > Allow guests to log in: Off
 ```
@@ -275,7 +275,7 @@ System Settings > Users & Groups > Guest User > Allow guests to log in: Off
 
 **If FAIL:** Password is not required immediately after sleep/screensaver.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > Lock Screen > Require password immediately after sleep or screen saver
 ```
@@ -327,7 +327,7 @@ All privacy checks audit the TCC (Transparency, Consent, and Control) database f
 
 **If WARNING:** Third-party applications have been granted sensitive permissions.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > Privacy & Security > [Permission Type]
 ```
@@ -440,12 +440,12 @@ defaults write com.apple.LaunchServices LSQuarantine -bool true
 
 **If FAIL:** Time Machine backup destination is not encrypted.
 
-**GUI Remediation (new backup):**
+**Manual Remediation (new backup):**
 ```
 System Settings > General > Time Machine > Add Backup Disk > ✓ Encrypt Backup
 ```
 
-**GUI Remediation (existing backup):**
+**Manual Remediation (existing backup):**
 ```
 System Settings > General > Time Machine > Select disk > Turn On Encryption
 ```
@@ -460,7 +460,7 @@ System Settings > General > Time Machine > Select disk > Turn On Encryption
 
 **If WARNING/INFO:** Diagnostic data is being shared.
 
-**GUI Remediation:**
+**Manual Remediation:**
 ```
 System Settings > Privacy & Security > Analytics & Improvements
   ☐ Share Mac Analytics

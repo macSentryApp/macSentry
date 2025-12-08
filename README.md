@@ -7,7 +7,6 @@
 ## Features
 
 - **39 security checks** across encryption, firewall, system integrity, authentication, privacy, applications, and configuration categories
-- **Modern GUI** — native macOS-styled graphical interface with real-time results
 - **No external dependencies** — uses only Python standard library and built-in macOS commands
 - **Multiple output formats** — human-readable text, JSON, and HTML reports
 - **Scheduled scanning** via launchd with included plist and installer
@@ -117,41 +116,6 @@ python3 macos_security_audit.py --dry-run
 ```bash
 sudo python3 macos_security_audit.py --elevated
 ```
-
----
-
-## macSentry GUI
-
-For users who prefer a visual interface, launch the macSentry GUI:
-
-```bash
-python3 gui.py
-```
-
-### Features
-
-- **Category Selection** — Enable/disable specific check categories
-- **Real-time Progress** — Watch checks execute with live progress updates
-- **Sortable Results** — Click column headers to sort by severity, status, or name
-- **Detail View** — Double-click any result to see full details and remediation
-- **Export Options** — Save reports as HTML, JSON, or plain text
-- **Active Filters Bar** — See and clear active filters at a glance
-
-### Options
-
-| Option | Description |
-|--------|-------------|
-| **Show passed** | Include passing checks in results |
-| **Sudo checks** | Run checks requiring elevated privileges |
-| **Min Severity** | Filter results by minimum severity level |
-| **Status Filter** | Filter displayed results by status |
-
-### Interface
-
-- **Toolbar** — Quick access to Run Audit and Export
-- **Sidebar** — Categories, options, severity filter, and stats
-- **Results Table** — Color-coded by severity, sortable columns
-- **Details Panel** — Full remediation info for selected check
 
 ---
 
@@ -485,7 +449,6 @@ Applications that fail `codesign --verify` may be unsigned, have broken signatur
 ```
 macSentry/
 ├── macos_security_audit.py      # CLI entry point
-├── gui.py                       # macSentry GUI
 ├── checks/
 │   ├── __init__.py
 │   ├── base.py                  # Base SecurityCheck class
