@@ -3,50 +3,33 @@
 # Or local: brew install --build-from-source ./Formula/macsentry.rb
 
 class Macsentry < Formula
+  include Language::Python::Virtualenv
+
   desc "Automated security auditing and monitoring tool for macOS"
-  homepage "https://github.com/macSentryApp/macSentry"
-  url "https://github.com/macSentryApp/macSentry/archive/refs/tags/v1.0.0.tar.gz"
-  sha256 "d055c53c4c94c0c87162db45ca952f5e86caa6d22d4ea8597e6442d7abbd20ed"
+  homepage "https://github.com/macSentryApp/macos-security-audit"
+  url "https://github.com/macSentryApp/macos-security-audit/archive/refs/tags/v2.0.0.tar.gz"
+  sha256 "UPDATE_WITH_ACTUAL_SHA256"
   license "MIT"
-  head "https://github.com/macSentryApp/macSentry.git", branch: "main"
+  head "https://github.com/macSentryApp/macos-security-audit.git", branch: "main"
 
   depends_on :macos => :ventura
   depends_on "python@3.11"
 
   def install
-    # Install Python files
-    libexec.install "macos_security_audit.py"
-    libexec.install "gui.py"
-    libexec.install "cli.py"
-    libexec.install "checks"
-    libexec.install "utils"
-    libexec.install "core"
+    # Create virtualenv and install the package
+    virtualenv_install_with_resources
 
     # Install launchd plist template
     (libexec/"launchd").install "launchd/com.macos-security-audit.plist"
-
-    # Create main CLI wrapper script
-    (bin/"macsentry").write <<~EOS
-      #!/bin/bash
-      exec "#{Formula["python@3.11"].opt_bin}/python3.11" "#{libexec}/macos_security_audit.py" "$@"
-    EOS
-
-    # Create GUI launcher
-    (bin/"macsentry-gui").write <<~EOS
-      #!/bin/bash
-      exec "#{Formula["python@3.11"].opt_bin}/python3.11" "#{libexec}/gui.py" "$@"
-    EOS
 
     # Install helper script to set up scheduled scanning
     (bin/"macsentry-install").write <<~EOS
       #!/bin/bash
       set -euo pipefail
 
-      PLIST_SOURCE="#{libexec}/launchd/com.macos-security-audit.plist"
       PLIST_TARGET="$HOME/Library/LaunchAgents/com.macsentry.plist"
       LOG_DIR="$HOME/Library/Logs/macsentry"
-      AUDIT_SCRIPT="#{libexec}/macos_security_audit.py"
-      PYTHON_BIN="#{Formula["python@3.11"].opt_bin}/python3.11"
+      MACSENTRY_BIN="#{bin}/macsentry"
       DOMAIN_TARGET="gui/$(id -u)"
 
       echo "Installing macSentry scheduled audit..."
@@ -62,8 +45,7 @@ class Macsentry < Formula
     <string>com.macsentry</string>
     <key>ProgramArguments</key>
     <array>
-        <string>$PYTHON_BIN</string>
-        <string>$AUDIT_SCRIPT</string>
+        <string>$MACSENTRY_BIN</string>
         <string>--format</string>
         <string>json</string>
         <string>-o</string>
@@ -127,9 +109,6 @@ PLIST
       Run a security audit:
         macsentry
 
-      Launch the GUI:
-        macsentry-gui
-
       Schedule daily audits (9:00 AM):
         macsentry-install
 
@@ -142,7 +121,7 @@ PLIST
         macsentry --format html -o report.html
 
       Logs: ~/Library/Logs/macsentry/
-      Docs: https://github.com/macSentryApp/macSentry#documentation
+      Docs: https://github.com/macSentryApp/macos-security-audit#readme
     EOS
   end
 

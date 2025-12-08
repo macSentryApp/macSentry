@@ -7,14 +7,14 @@ from subprocess import TimeoutExpired
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, mock_open
 
-from checks.authentication import (
+from macsentry.checks.authentication import (
     AutoLoginDisabledCheck,
     GuestAccountDisabledCheck,
     ScreenSaverPasswordCheck,
     SudoTimeoutCheck,
     PasswordPolicyCheck,
 )
-from checks.types import Status, Severity
+from macsentry.checks.types import Status, Severity
 
 
 class TestAutoLoginDisabledCheck:

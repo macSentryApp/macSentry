@@ -9,8 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-# Add project root to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Add src directory to path for imports
+sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 
 @dataclass
@@ -448,7 +448,7 @@ def temp_tcc_db(tmp_path):
 @pytest.fixture
 def clear_check_registry():
     """Clear the check registry before and after each test."""
-    from checks.base import CheckRegistry
+    from macsentry.checks.base import CheckRegistry
     CheckRegistry.clear()
     yield
     CheckRegistry.clear()

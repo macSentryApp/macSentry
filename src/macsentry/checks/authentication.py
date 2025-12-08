@@ -5,9 +5,9 @@ import re
 from pathlib import Path
 from subprocess import TimeoutExpired
 
-from checks.base import CheckResult, SecurityCheck, Severity, Status
-from utils.commands import run_command
-from utils.parsers import parse_defaults_bool
+from .base import CheckResult, SecurityCheck, Severity, Status
+from ..utils.commands import run_command
+from ..utils.parsers import parse_defaults_bool
 
 
 class AutoLoginDisabledCheck(SecurityCheck):

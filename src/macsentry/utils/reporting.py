@@ -9,7 +9,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Iterable, Mapping
 
-from checks.types import CheckResult, Severity, Status
+from ..checks.types import CheckResult, Severity, Status
 
 _HEADER_LINE = "═" * 70
 

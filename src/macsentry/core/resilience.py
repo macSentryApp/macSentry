@@ -24,9 +24,9 @@ from concurrent.futures import ThreadPoolExecutor, TimeoutError as FuturesTimeou
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Iterable, List, Optional, TypeVar
 
-from core.circuit_breaker import CircuitBreaker, CircuitState, get_circuit_breaker
-from core.injection import DependencyContainer, get_container
-from core.interfaces import DetectionLayer, Finding
+from .circuit_breaker import CircuitBreaker, CircuitState, get_circuit_breaker
+from .injection import DependencyContainer, get_container
+from .interfaces import DetectionLayer, Finding
 
 logger = logging.getLogger(__name__)
 

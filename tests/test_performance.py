@@ -29,7 +29,7 @@ MEMORY_THRESHOLD_MB = float(
     os.environ.get("MEMORY_THRESHOLD_MB", "100")
 )
 
-SCRIPT_PATH = Path(__file__).parent.parent / "macos_security_audit.py"
+SCRIPT_PATH = Path(__file__).parent.parent / "src" / "macsentry" / "macos_security_audit.py"
 
 
 class TestExecutionTime:

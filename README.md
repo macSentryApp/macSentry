@@ -26,44 +26,59 @@
 
 ## Installation
 
-### Option 1: Git Clone (Recommended for Development)
+### Option 1: pipx (Recommended)
+
+```bash
+# Install pipx if you don't have it
+brew install pipx
+pipx ensurepath
+
+# Install macSentry
+pipx install macSentry
+
+# Run
+macsentry --help
+```
+
+### Option 2: pip
+
+```bash
+# Install in a virtual environment
+python3 -m venv ~/.venv/macsentry
+source ~/.venv/macsentry/bin/activate
+pip install macSentry
+
+# Run
+macsentry --help
+```
+
+### Option 3: Git Clone (Development)
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-org/macos-security-audit.git
+git clone https://github.com/macSentry/macos-security-audit.git
 cd macos-security-audit
 
-# (Optional) Create a virtual environment
+# Create virtual environment and install in editable mode
 python3 -m venv .venv && source .venv/bin/activate
+pip install -e .
 
-# Verify installation
-python3 macos_security_audit.py --dry-run
+# Run
+macsentry --dry-run
 ```
 
-### Option 2: Homebrew
+### Option 4: Homebrew
 
 ```bash
 # Install from local formula
 brew install --build-from-source ./Formula/macos-security-audit.rb
 
 # Or add tap (once published)
-brew tap your-org/macos-security-audit
+brew tap macSentry/macos-security-audit
 brew install macos-security-audit
 
 # Run
-macos-security-audit --help
-
-# Install scheduled job
-macos-security-audit-install
-```
-
-### Auto-Update
-
-For git-cloned installations:
-
-```bash
-# Check for and install updates
-./scripts/self-update.sh
+macsentry --help
 ```
 
 ---
@@ -73,48 +88,48 @@ For git-cloned installations:
 ### Run All Checks
 
 ```bash
-python3 macos_security_audit.py
+macsentry
 ```
 
 ### Filter by Category
 
 ```bash
-python3 macos_security_audit.py --categories encryption,firewall
+macsentry --categories encryption,firewall
 ```
 
 ### Output Formats
 
 ```bash
 # JSON output
-python3 macos_security_audit.py --format json
+macsentry --format json
 
 # HTML report
-python3 macos_security_audit.py --format html --output report.html
+macsentry --format html --output report.html
 ```
 
 ### Severity Filtering
 
 ```bash
 # Show only CRITICAL and HIGH findings
-python3 macos_security_audit.py --min-severity HIGH
+macsentry --min-severity HIGH
 ```
 
 ### Include Passed Checks
 
 ```bash
-python3 macos_security_audit.py --verbose
+macsentry --verbose
 ```
 
 ### Dry Run (List Checks Without Executing)
 
 ```bash
-python3 macos_security_audit.py --dry-run
+macsentry --dry-run
 ```
 
 ### Run Elevated Checks (Requires sudo)
 
 ```bash
-sudo python3 macos_security_audit.py --elevated
+sudo macsentry --elevated
 ```
 
 ---
@@ -253,7 +268,7 @@ Then restart Terminal and re-run the audit.
 
 **Solution:**
 ```bash
-sudo python3 macos_security_audit.py --elevated
+sudo macsentry --elevated
 ```
 
 #### launchd fails on external volume
@@ -297,7 +312,7 @@ cd ~/Applications/macos-security-audit
 
 **Solution:** Ensure the file has `.html` extension:
 ```bash
-python3 macos_security_audit.py --format html --output report.html
+macsentry --format html --output report.html
 open report.html
 ```
 
@@ -311,7 +326,7 @@ open report.html
 
 **Solution:** Run `--dry-run` to verify which checks would execute:
 ```bash
-python3 macos_security_audit.py --dry-run
+macsentry --dry-run
 ```
 
 ### Debug Mode
@@ -319,7 +334,7 @@ python3 macos_security_audit.py --dry-run
 Enable verbose logging for troubleshooting:
 
 ```bash
-python3 macos_security_audit.py --debug
+macsentry --debug
 ```
 
 Logs are written to `~/Library/Logs/macos-security-audit/audit.log`.
@@ -348,7 +363,7 @@ jobs:
       
       - name: Run Security Audit
         run: |
-          python3 macos_security_audit.py --format json -o audit-results.json
+          macsentry --format json -o audit-results.json
         continue-on-error: false
       
       - name: Upload Results
@@ -362,7 +377,7 @@ jobs:
 
 ```bash
 #!/bin/bash
-python3 macos_security_audit.py --format json -o results.json
+macsentry --format json -o results.json
 EXIT_CODE=$?
 
 case $EXIT_CODE in
@@ -386,7 +401,7 @@ See [CHECKS.md](docs/CHECKS.md#exit-codes-for-cicd-integration) for more CI/CD e
 python3 --version
 
 # Verify the script runs
-python3 macos_security_audit.py --dry-run
+macsentry --dry-run
 
 # Check if scheduled job is installed
 launchctl list | grep macos-security-audit
@@ -398,7 +413,7 @@ launchctl list | grep macos-security-audit
 
 ### Why do some checks require sudo?
 
-Certain system configurations (firmware password, sudoers file, password policies) are protected and require root access to query. Run with `sudo python3 macos_security_audit.py --elevated` to include these checks.
+Certain system configurations (firmware password, sudoers file, password policies) are protected and require root access to query. Run with `sudo macsentry --elevated` to include these checks.
 
 ### How do I disable specific checks?
 

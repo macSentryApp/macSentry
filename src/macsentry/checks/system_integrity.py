@@ -6,9 +6,9 @@ from pathlib import Path
 from subprocess import TimeoutExpired
 from typing import Dict, Optional
 
-from checks.base import CheckResult, SecurityCheck, Severity, Status
-from utils.commands import CommandExecutionError, run_command
-from utils.parsers import load_plist, parse_defaults_bool
+from .base import CheckResult, SecurityCheck, Severity, Status
+from ..utils.commands import CommandExecutionError, run_command
+from ..utils.parsers import load_plist, parse_defaults_bool
 
 
 class SystemIntegrityProtectionCheck(SecurityCheck):

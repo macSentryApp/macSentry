@@ -7,7 +7,7 @@ from subprocess import TimeoutExpired
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, PropertyMock
 
-from checks.applications import (
+from macsentry.checks.applications import (
     UnsignedApplicationsCheck,
     DangerousEntitlementsCheck,
     QuarantineEnforcementCheck,
@@ -15,7 +15,7 @@ from checks.applications import (
     _APPLICATIONS_DIRS,
     _MAX_APPS_TO_SCAN,
 )
-from checks.types import Status, Severity
+from macsentry.checks.types import Status, Severity
 
 
 class TestIterAppBundles:

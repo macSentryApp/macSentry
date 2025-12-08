@@ -6,7 +6,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from checks.encryption import ExternalDiskEncryptionCheck, FileVaultStatusCheck
+from macsentry.checks.encryption import ExternalDiskEncryptionCheck, FileVaultStatusCheck
 
 
 class FileVaultStatusCheckTests(unittest.TestCase):

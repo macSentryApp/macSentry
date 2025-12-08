@@ -5,7 +5,7 @@ import time
 import unittest
 from unittest.mock import MagicMock
 
-from core.circuit_breaker import CircuitBreaker, CircuitState, CircuitStats
+from macsentry.core.circuit_breaker import CircuitBreaker, CircuitState, CircuitStats
 
 
 class TestCircuitBreaker(unittest.TestCase):

@@ -6,7 +6,7 @@ import plistlib
 import pytest
 from pathlib import Path
 
-from utils.parsers import (
+from macsentry.utils.parsers import (
     parse_defaults_bool,
     parse_key_value_output,
     load_plist,

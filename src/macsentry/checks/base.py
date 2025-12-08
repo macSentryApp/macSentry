@@ -20,7 +20,7 @@ def _get_hardware_info():
     """Lazy load hardware info to avoid circular imports."""
     global _hardware_info
     if _hardware_info is None:
-        from utils.system_info import get_hardware_info
+        from ..utils.system_info import get_hardware_info
         _hardware_info = get_hardware_info()
     return _hardware_info
 
@@ -29,7 +29,7 @@ def _get_environment_info():
     """Lazy load environment info to avoid circular imports."""
     global _environment_info
     if _environment_info is None:
-        from utils.system_info import get_environment_info
+        from ..utils.system_info import get_environment_info
         _environment_info = get_environment_info()
     return _environment_info
 

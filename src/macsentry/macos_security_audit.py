@@ -16,9 +16,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Sequence
 
-from checks import load_checks
-from checks.base import CheckRegistry, CheckResult, SecurityCheck, Severity, Status
-from cli import (
+from .checks import load_checks
+from .checks.base import CheckRegistry, CheckResult, SecurityCheck, Severity, Status
+from .cli import (
     Console,
     Icons,
     LiveProgress,
@@ -29,7 +29,7 @@ from cli import (
     show_cursor,
     hide_cursor,
 )
-from utils import (
+from .utils import (
     CommandExecutionError,
     format_html_report,
     format_json_report,
@@ -40,7 +40,7 @@ from utils import (
     get_hardware_info,
 )
 
-__version__ = "1.2.0"
+__version__ = "2.0.0"
 
 _LOG_DIR = Path.home() / "Library" / "Logs" / "macos-security-audit"
 _STATE_DIR = Path.home() / "Library" / "Application Support" / "macos-security-audit"

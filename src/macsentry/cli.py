@@ -10,7 +10,7 @@ import time
 from dataclasses import dataclass
 from typing import Callable, Iterable, List, Optional
 
-from checks.types import CheckResult, Severity, Status
+from .checks.types import CheckResult, Severity, Status
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ANSI Color & Style Codes

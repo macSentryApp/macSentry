@@ -4,9 +4,9 @@ from __future__ import annotations
 from subprocess import TimeoutExpired
 from typing import Dict, Optional
 
-from checks.base import CheckResult, SecurityCheck, Severity, Status
-from utils.commands import CommandExecutionError, run_command
-from utils.parsers import parse_key_value_output
+from .base import CheckResult, SecurityCheck, Severity, Status
+from ..utils.commands import CommandExecutionError, run_command
+from ..utils.parsers import parse_key_value_output
 
 
 class FirewallEnabledCheck(SecurityCheck):

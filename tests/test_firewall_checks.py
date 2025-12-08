@@ -6,7 +6,7 @@ from subprocess import TimeoutExpired
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch
 
-from checks.firewall import (
+from macsentry.checks.firewall import (
     FirewallEnabledCheck,
     FirewallStealthModeCheck,
     RemoteLoginCheck,
@@ -14,8 +14,8 @@ from checks.firewall import (
     RemoteManagementCheck,
     AirDropDiscoverabilityCheck,
 )
-from checks.types import Status, Severity
-from utils.commands import CommandExecutionError
+from macsentry.checks.types import Status, Severity
+from macsentry.utils.commands import CommandExecutionError
 
 
 class TestFirewallEnabledCheck:

@@ -6,7 +6,7 @@ import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-from checks.privacy import (
+from macsentry.checks.privacy import (
     CameraPermissionsCheck,
     ScreenRecordingPermissionsCheck,
     MicrophonePermissionsCheck,
@@ -17,7 +17,7 @@ from checks.privacy import (
     _TCCPermissionMixin,
     _reset_tcc_access_state,
 )
-from checks.types import Status, Severity
+from macsentry.checks.types import Status, Severity
 
 
 @pytest.fixture(autouse=True)

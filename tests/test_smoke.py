@@ -29,7 +29,7 @@ PERFORMANCE_THRESHOLD_SECONDS = float(
 )
 
 # Path to the main script
-SCRIPT_PATH = Path(__file__).parent.parent / "macos_security_audit.py"
+SCRIPT_PATH = Path(__file__).parent.parent / "src" / "macsentry" / "macos_security_audit.py"
 
 # Valid exit codes for successful audit runs:
 # 0 = no issues, 2 = critical/high issues, 3 = warnings/medium issues

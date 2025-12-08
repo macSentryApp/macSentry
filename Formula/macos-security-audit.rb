@@ -1,93 +1,48 @@
-# Homebrew formula for macOS Security Audit
-# Install: brew install --build-from-source ./Formula/macos-security-audit.rb
-# Or add tap: brew tap your-org/macos-security-audit && brew install macos-security-audit
+# Homebrew formula for macOS Security Audit (legacy name)
+# NOTE: This formula is deprecated. Use 'macsentry' instead:
+#   brew install macSentryApp/tap/macsentry
+#
+# This formula is kept for backwards compatibility and redirects to macsentry.
 
 class MacosSecurityAudit < Formula
-  desc "Automated security auditing tool for macOS"
-  homepage "https://github.com/your-org/macos-security-audit"
-  url "https://github.com/your-org/macos-security-audit/archive/refs/tags/v1.0.0.tar.gz"
+  include Language::Python::Virtualenv
+
+  desc "Automated security auditing tool for macOS (use 'macsentry' instead)"
+  homepage "https://github.com/macSentryApp/macos-security-audit"
+  url "https://github.com/macSentryApp/macos-security-audit/archive/refs/tags/v2.0.0.tar.gz"
   sha256 "UPDATE_WITH_ACTUAL_SHA256"
   license "MIT"
-  head "https://github.com/your-org/macos-security-audit.git", branch: "main"
+  head "https://github.com/macSentryApp/macos-security-audit.git", branch: "main"
 
-  depends_on :macos
+  depends_on :macos => :ventura
   depends_on "python@3.11"
 
   def install
-    # Install Python files
-    libexec.install "macos_security_audit.py"
-    libexec.install "checks"
-    libexec.install "utils"
-    libexec.install "core"
+    # Create virtualenv and install the package
+    virtualenv_install_with_resources
 
-    # Install launchd plist template
-    (libexec/"launchd").install "launchd/com.macos-security-audit.plist"
-
-    # Create wrapper script
+    # Create alias for backwards compatibility
     (bin/"macos-security-audit").write <<~EOS
       #!/bin/bash
-      exec "#{Formula["python@3.11"].opt_bin}/python3" "#{libexec}/macos_security_audit.py" "$@"
-    EOS
-
-    # Install helper scripts
-    (bin/"macos-security-audit-install").write <<~EOS
-      #!/bin/bash
-      set -euo pipefail
-
-      PLIST_SOURCE="#{libexec}/launchd/com.macos-security-audit.plist"
-      PLIST_TARGET="$HOME/Library/LaunchAgents/com.macos-security-audit.plist"
-      LOG_DIR="$HOME/Library/Logs/macos-security-audit"
-      AUDIT_SCRIPT="#{libexec}/macos_security_audit.py"
-      DOMAIN_TARGET="gui/$(id -u)"
-
-      mkdir -p "$LOG_DIR"
-      cp "$PLIST_SOURCE" "$PLIST_TARGET"
-      /usr/bin/sed -i '' "s#__SCRIPT_PATH__#${AUDIT_SCRIPT}#g" "$PLIST_TARGET"
-      /usr/bin/sed -i '' "s#__LOG_DIR__#${LOG_DIR}#g" "$PLIST_TARGET"
-
-      launchctl bootout "$DOMAIN_TARGET/com.macos-security-audit" 2>/dev/null || true
-      launchctl bootstrap "$DOMAIN_TARGET" "$PLIST_TARGET" 2>/dev/null || \\
-        launchctl load "$PLIST_TARGET" 2>/dev/null
-
-      echo "✓ LaunchAgent installed: $PLIST_TARGET"
-      echo "✓ Logs: $LOG_DIR"
-      echo "Verify: launchctl list | grep macos-security-audit"
-    EOS
-
-    (bin/"macos-security-audit-uninstall").write <<~EOS
-      #!/bin/bash
-      set -euo pipefail
-
-      PLIST_TARGET="$HOME/Library/LaunchAgents/com.macos-security-audit.plist"
-      DOMAIN_TARGET="gui/$(id -u)"
-
-      launchctl bootout "$DOMAIN_TARGET/com.macos-security-audit" 2>/dev/null || \\
-        launchctl unload "$PLIST_TARGET" 2>/dev/null || true
-      [[ -f "$PLIST_TARGET" ]] && rm "$PLIST_TARGET"
-
-      echo "✓ LaunchAgent uninstalled"
+      exec "#{bin}/macsentry" "$@"
     EOS
   end
 
   def caveats
     <<~EOS
-      To schedule daily security audits at 9:00 AM:
-        macos-security-audit-install
+      NOTE: This formula name is deprecated!
+      
+      Please use 'macsentry' instead:
+        brew uninstall macos-security-audit
+        brew install macSentryApp/tap/macsentry
 
-      To uninstall the scheduled job:
-        macos-security-audit-uninstall
-
-      Logs are written to:
-        ~/Library/Logs/macos-security-audit/
-
-      Run manually:
-        macos-security-audit
-        macos-security-audit --format json
-        macos-security-audit --help
+      For now, you can run:
+        macsentry --help
+        macsentry
     EOS
   end
 
   test do
-    system "#{bin}/macos-security-audit", "--dry-run"
+    system "#{bin}/macsentry", "--dry-run"
   end
 end

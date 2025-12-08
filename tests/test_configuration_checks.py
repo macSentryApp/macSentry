@@ -8,14 +8,14 @@ from subprocess import TimeoutExpired
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, mock_open
 
-from checks.configuration import (
+from macsentry.checks.configuration import (
     FirmwarePasswordCheck,
     SecureBootCheck,
     TimeMachineEncryptionCheck,
     CrashReportingCheck,
     DiagnosticsSharingCheck,
 )
-from checks.types import Status, Severity
+from macsentry.checks.types import Status, Severity
 
 
 class TestFirmwarePasswordCheck:

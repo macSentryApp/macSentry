@@ -7,9 +7,9 @@ from subprocess import TimeoutExpired
 from pathlib import Path
 from typing import Any, Dict, List
 
-from checks.base import CheckResult, SecurityCheck, Severity, Status
-from utils import commands, parsers
-from utils.commands import CommandTimeoutError, run_command_graceful
+from .base import CheckResult, SecurityCheck, Severity, Status
+from ..utils import commands, parsers
+from ..utils.commands import CommandTimeoutError, run_command_graceful
 
 logger = logging.getLogger(__name__)
 

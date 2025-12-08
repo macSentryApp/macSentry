@@ -5,13 +5,13 @@ import pytest
 from typing import Any
 from unittest.mock import MagicMock, patch, PropertyMock
 
-from checks.base import (
+from macsentry.checks.base import (
     SecurityCheck,
     CheckRegistry,
     SecurityCheckMeta,
     inspect_is_abstract,
 )
-from checks.types import CheckResult, Status, Severity
+from macsentry.checks.types import CheckResult, Status, Severity
 
 
 class TestCheckRegistry:

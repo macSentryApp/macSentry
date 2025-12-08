@@ -7,15 +7,15 @@ This module provides:
 - Graceful degradation patterns
 """
 
-from core.interfaces import (
+from .interfaces import (
     DetectionLayer,
     ReportingLayer,
     RemediationLayer,
     OSInterface,
 )
-from core.injection import DependencyContainer, get_container
-from core.circuit_breaker import CircuitBreaker, CircuitState
-from core.resilience import with_graceful_degradation, CheckExecutor
+from .injection import DependencyContainer, get_container
+from .circuit_breaker import CircuitBreaker, CircuitState
+from .resilience import with_graceful_degradation, CheckExecutor
 
 __all__ = [
     # Interfaces

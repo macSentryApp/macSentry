@@ -9,7 +9,7 @@ from subprocess import TimeoutExpired
 from types import SimpleNamespace
 from unittest.mock import MagicMock, patch, PropertyMock
 
-from checks.system_integrity import (
+from macsentry.checks.system_integrity import (
     SystemIntegrityProtectionCheck,
     GatekeeperCheck,
     XProtectUpdateCheck,
@@ -17,8 +17,8 @@ from checks.system_integrity import (
     SoftwareUpdatePendingCheck,
     AutomaticUpdatesCheck,
 )
-from checks.types import Status, Severity
-from utils.commands import CommandExecutionError
+from macsentry.checks.types import Status, Severity
+from macsentry.utils.commands import CommandExecutionError
 
 
 class TestSystemIntegrityProtectionCheck:

@@ -8,7 +8,7 @@ import subprocess
 from pathlib import Path
 from typing import Iterable, List, Optional, Tuple
 
-from checks.base import CheckResult, SecurityCheck, Severity, Status
+from .base import CheckResult, SecurityCheck, Severity, Status
 
 # Permission denied message with guidance
 _TCC_ACCESS_DENIED_MSG = (

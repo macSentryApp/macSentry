@@ -7,14 +7,14 @@ from dataclasses import dataclass
 from typing import Optional
 from unittest.mock import MagicMock, patch
 
-from core.circuit_breaker import CircuitBreaker
-from core.injection import (
+from macsentry.core.circuit_breaker import CircuitBreaker
+from macsentry.core.injection import (
     CommandResult,
     DependencyContainer,
     MockOSInterface,
 )
-from core.interfaces import DetectionLayer, Finding, OSInterface
-from core.resilience import (
+from macsentry.core.interfaces import DetectionLayer, Finding, OSInterface
+from macsentry.core.resilience import (
     CheckExecutor,
     ExecutorConfig,
     with_graceful_degradation,

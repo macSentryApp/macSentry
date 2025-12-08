@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
 
-from core.interfaces import CommandResult, OSInterface
+from .interfaces import CommandResult, OSInterface
 
 logger = logging.getLogger(__name__)
 

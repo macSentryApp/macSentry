@@ -6,8 +6,8 @@ import plistlib
 from pathlib import Path
 from subprocess import TimeoutExpired
 
-from checks.base import CheckResult, SecurityCheck, Severity, Status
-from utils.commands import run_command, run_command_graceful, CommandTimeoutError
+from .base import CheckResult, SecurityCheck, Severity, Status
+from ..utils.commands import run_command, run_command_graceful, CommandTimeoutError
 
 logger = logging.getLogger(__name__)
 

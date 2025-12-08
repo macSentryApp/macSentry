@@ -5,8 +5,8 @@ import shlex
 from pathlib import Path
 from typing import Iterable, List
 
-from checks.base import CheckResult, SecurityCheck, Severity, Status
-from utils.commands import run_command, CommandTimeoutError
+from .base import CheckResult, SecurityCheck, Severity, Status
+from ..utils.commands import run_command, CommandTimeoutError
 
 _APPLICATIONS_DIRS: tuple[Path, ...] = (Path("/Applications"), Path.home() / "Applications")
 _MAX_APPS_TO_SCAN = 25

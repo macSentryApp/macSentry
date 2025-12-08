@@ -36,8 +36,8 @@ class TestFileVaultIntegration:
 
     def test_filevault_check_executes(self) -> None:
         """Verify FileVault check runs without errors."""
-        from checks.encryption import FileVaultStatusCheck as FileVaultCheck
-        from checks.base import Status
+        from macsentry.checks.encryption import FileVaultStatusCheck as FileVaultCheck
+        from macsentry.checks.base import Status
 
         check = FileVaultCheck()
         result = check.execute()
@@ -50,8 +50,8 @@ class TestFileVaultIntegration:
 
     def test_filevault_check_returns_valid_severity(self) -> None:
         """Verify FileVault check returns critical severity."""
-        from checks.encryption import FileVaultStatusCheck as FileVaultCheck
-        from checks.base import Severity
+        from macsentry.checks.encryption import FileVaultStatusCheck as FileVaultCheck
+        from macsentry.checks.base import Severity
 
         check = FileVaultCheck()
         result = check.execute()
@@ -60,7 +60,7 @@ class TestFileVaultIntegration:
 
     def test_filevault_check_has_remediation(self) -> None:
         """Verify FileVault check provides remediation guidance."""
-        from checks.encryption import FileVaultStatusCheck as FileVaultCheck
+        from macsentry.checks.encryption import FileVaultStatusCheck as FileVaultCheck
 
         check = FileVaultCheck()
         result = check.execute()
@@ -70,8 +70,8 @@ class TestFileVaultIntegration:
 
     def test_filevault_matches_system_state(self) -> None:
         """Verify FileVault check result matches actual system state."""
-        from checks.encryption import FileVaultStatusCheck as FileVaultCheck
-        from checks.base import Status
+        from macsentry.checks.encryption import FileVaultStatusCheck as FileVaultCheck
+        from macsentry.checks.base import Status
 
         # Get actual FileVault status from system
         try:
@@ -102,7 +102,7 @@ class TestFileVaultIntegration:
     def test_filevault_execution_time(self) -> None:
         """Verify FileVault check completes quickly."""
         import time
-        from checks.encryption import FileVaultStatusCheck as FileVaultCheck
+        from macsentry.checks.encryption import FileVaultStatusCheck as FileVaultCheck
 
         check = FileVaultCheck()
         
@@ -119,8 +119,8 @@ class TestSIPIntegration:
 
     def test_sip_check_executes(self) -> None:
         """Verify SIP check runs without errors."""
-        from checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
-        from checks.base import Status
+        from macsentry.checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
+        from macsentry.checks.base import Status
 
         check = SIPCheck()
         result = check.execute()
@@ -133,8 +133,8 @@ class TestSIPIntegration:
 
     def test_sip_check_returns_valid_severity(self) -> None:
         """Verify SIP check returns critical severity."""
-        from checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
-        from checks.base import Severity
+        from macsentry.checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
+        from macsentry.checks.base import Severity
 
         check = SIPCheck()
         result = check.execute()
@@ -143,7 +143,7 @@ class TestSIPIntegration:
 
     def test_sip_check_has_remediation(self) -> None:
         """Verify SIP check provides remediation guidance."""
-        from checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
+        from macsentry.checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
 
         check = SIPCheck()
         result = check.execute()
@@ -153,8 +153,8 @@ class TestSIPIntegration:
 
     def test_sip_matches_system_state(self) -> None:
         """Verify SIP check result matches actual system state."""
-        from checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
-        from checks.base import Status
+        from macsentry.checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
+        from macsentry.checks.base import Status
 
         # Get actual SIP status from system
         try:
@@ -185,7 +185,7 @@ class TestSIPIntegration:
     def test_sip_execution_time(self) -> None:
         """Verify SIP check completes quickly."""
         import time
-        from checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
+        from macsentry.checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
 
         check = SIPCheck()
         
@@ -202,8 +202,8 @@ class TestCriticalChecksRegistry:
 
     def test_all_critical_checks_registered(self) -> None:
         """Verify all critical checks are properly registered."""
-        from checks import load_checks
-        from checks.base import CheckRegistry, Severity
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry, Severity
 
         load_checks()
 
@@ -225,8 +225,8 @@ class TestCriticalChecksRegistry:
 
     def test_critical_checks_have_required_attributes(self) -> None:
         """Verify critical checks have all required attributes."""
-        from checks import load_checks
-        from checks.base import CheckRegistry, Severity
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry, Severity
 
         load_checks()
 
@@ -247,8 +247,8 @@ class TestCriticalChecksRegistry:
 
     def test_critical_checks_instantiable(self) -> None:
         """Verify all critical checks can be instantiated."""
-        from checks import load_checks
-        from checks.base import CheckRegistry, Severity
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry, Severity
 
         load_checks()
 
@@ -266,8 +266,8 @@ class TestCriticalChecksRegistry:
 
     def test_all_critical_checks_execute_successfully(self) -> None:
         """Verify all critical checks execute without crashing."""
-        from checks import load_checks
-        from checks.base import CheckRegistry, Severity, CheckResult
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry, Severity, CheckResult
 
         load_checks()
 
@@ -293,8 +293,8 @@ class TestCriticalCheckOutput:
     def test_critical_checks_json_serializable(self) -> None:
         """Verify critical check results can be serialized to JSON."""
         import json
-        from checks import load_checks
-        from checks.base import CheckRegistry, Severity
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry, Severity
 
         load_checks()
 
@@ -326,8 +326,8 @@ class TestCriticalCheckOutput:
 
     def test_critical_checks_message_descriptive(self) -> None:
         """Verify critical check messages are descriptive."""
-        from checks import load_checks
-        from checks.base import CheckRegistry, Severity
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry, Severity
 
         load_checks()
 
@@ -352,9 +352,9 @@ class TestCriticalCheckErrorHandling:
 
     def test_filevault_handles_missing_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Verify FileVault check handles missing fdesetup gracefully."""
-        from checks import encryption
-        from checks.encryption import FileVaultStatusCheck as FileVaultCheck
-        from checks.base import Status
+        from macsentry.checks import encryption
+        from macsentry.checks.encryption import FileVaultStatusCheck as FileVaultCheck
+        from macsentry.checks.base import Status
 
         def mock_run_command(*args, **kwargs):  # noqa: ANN002, ANN003
             raise FileNotFoundError("Command not found: fdesetup")
@@ -371,9 +371,9 @@ class TestCriticalCheckErrorHandling:
 
     def test_sip_handles_missing_command(self, monkeypatch: pytest.MonkeyPatch) -> None:
         """Verify SIP check handles missing csrutil gracefully."""
-        from checks import system_integrity
-        from checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
-        from checks.base import Status
+        from macsentry.checks import system_integrity
+        from macsentry.checks.system_integrity import SystemIntegrityProtectionCheck as SIPCheck
+        from macsentry.checks.base import Status
 
         def mock_run_command(*args, **kwargs):  # noqa: ANN002, ANN003
             raise FileNotFoundError("Command not found: csrutil")
