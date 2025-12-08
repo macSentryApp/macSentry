@@ -25,7 +25,7 @@ if TYPE_CHECKING:
 
 # Performance threshold in seconds (configurable via environment)
 PERFORMANCE_THRESHOLD_SECONDS = float(
-    os.environ.get("SMOKE_TEST_PERFORMANCE_THRESHOLD", "30")
+    os.environ.get("SMOKE_TEST_PERFORMANCE_THRESHOLD", "60")
 )
 
 # Path to the main script
@@ -282,7 +282,7 @@ class TestPerformance:
     def test_full_audit_performance(self, performance_threshold: float) -> None:
         """Test that full audit completes within threshold.
 
-        Default threshold: 30 seconds (M1/M2 baseline)
+        Default threshold: 60 seconds (CI VM baseline)
         This may need adjustment for Intel Macs via environment variable.
         """
         start_time = time.perf_counter()

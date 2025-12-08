@@ -15,8 +15,8 @@ on:
 
 env:
   PYTHON_VERSION: '3.12'
-  # Performance threshold in seconds (30s baseline for M1/M2)
-  PERFORMANCE_THRESHOLD: 30
+  # Performance threshold in seconds (60s baseline for CI VMs)
+  PERFORMANCE_THRESHOLD: 60
 
 jobs:
   smoke-test:
