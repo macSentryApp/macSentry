@@ -422,27 +422,34 @@ class TestVerboseMode:
     """Test verbose output mode."""
 
     def test_verbose_shows_more_output(self) -> None:
-        """Test that --verbose produces more output."""
-        # Run without verbose
+        """Test that --verbose produces more output.
+        
+        Uses --dry-run mode for speed in CI environments.
+        """
+        # Run without verbose (dry-run for speed)
         result_normal = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "text", "--skip-validation"],
+            [sys.executable, str(SCRIPT_PATH), "--dry-run", "--skip-validation"],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=30,
         )
 
-        # Run with verbose
+        # Run with verbose (dry-run for speed)
         result_verbose = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "text", "--verbose", "--skip-validation"],
+            [sys.executable, str(SCRIPT_PATH), "--dry-run", "--verbose", "--skip-validation"],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=30,
         )
 
-        assert result_normal.returncode in VALID_EXIT_CODES
-        assert result_verbose.returncode in VALID_EXIT_CODES
+        assert result_normal.returncode == 0
+        assert result_verbose.returncode == 0
 
-        # Verbose output should be at least as long (likely longer)
+        # Both should produce output
+        assert len(result_normal.stdout) > 0, "Normal mode should produce output"
+        assert len(result_verbose.stdout) > 0, "Verbose mode should produce output"
+        
+        # Verbose output should be at least as long (likely longer due to extra details)
         assert len(result_verbose.stdout) >= len(result_normal.stdout), (
             "Verbose mode should produce at least as much output"
         )
