@@ -97,7 +97,8 @@ jobs:
         run: |
           echo "=== Testing JSON output ==="
           # Exit codes 0, 2, 3 are valid (0=pass, 2=issues found, 3=warnings)
-          output=$(python macos_security_audit.py --format json 2>&1) || exit_code=$?
+          # Capture JSON output (stdout only), let stderr show in logs
+          output=$(python macos_security_audit.py --format json 2>/dev/null) || exit_code=$?
           # Only fail on exit code 1 (actual error)
           if [ "${exit_code:-0}" -eq 1 ]; then
             echo "ERROR: Script failed with exit code 1"
