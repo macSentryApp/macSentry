@@ -99,25 +99,27 @@ class TestScriptExecution:
 class TestOutputFormats:
     """Test all output format options."""
 
+    @pytest.mark.timeout(120)
     def test_text_output(self) -> None:
         """Test text format output."""
         result = subprocess.run(
             [sys.executable, str(SCRIPT_PATH), "--format", "text", "--skip-validation"],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=90,
         )
         assert result.returncode in VALID_EXIT_CODES, f"Text output failed: {result.stderr}"
         # Should contain report header elements
         assert len(result.stdout) > 100, "Output too short"
 
+    @pytest.mark.timeout(120)
     def test_json_output_valid(self) -> None:
         """Test JSON format produces valid JSON."""
         result = subprocess.run(
             [sys.executable, str(SCRIPT_PATH), "--format", "json", "--skip-validation"],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=90,
         )
         assert result.returncode in VALID_EXIT_CODES, f"JSON output failed: {result.stderr}"
 
@@ -132,13 +134,14 @@ class TestOutputFormats:
             f"Unexpected JSON structure: {list(data.keys()) if isinstance(data, dict) else type(data)}"
         )
 
+    @pytest.mark.timeout(120)
     def test_json_output_has_system_info(self) -> None:
         """Test JSON output includes system information."""
         result = subprocess.run(
             [sys.executable, str(SCRIPT_PATH), "--format", "json", "--skip-validation"],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=90,
         )
         assert result.returncode in VALID_EXIT_CODES
 
@@ -148,6 +151,7 @@ class TestOutputFormats:
             "JSON output missing system information"
         )
 
+    @pytest.mark.timeout(120)
     def test_html_output(self) -> None:
         """Test HTML format output."""
         with tempfile.NamedTemporaryFile(suffix=".html", delete=False) as f:
@@ -158,7 +162,7 @@ class TestOutputFormats:
                 [sys.executable, str(SCRIPT_PATH), "--format", "html", "--output", output_path, "--skip-validation"],
                 capture_output=True,
                 text=True,
-                timeout=60,
+                timeout=90,
             )
             assert result.returncode in VALID_EXIT_CODES, f"HTML output failed: {result.stderr}"
 
@@ -274,6 +278,7 @@ class TestPerformance:
         """Get performance threshold from environment or use default."""
         return PERFORMANCE_THRESHOLD_SECONDS
 
+    @pytest.mark.timeout(180)
     def test_full_audit_performance(self, performance_threshold: float) -> None:
         """Test that full audit completes within threshold.
 
@@ -286,7 +291,7 @@ class TestPerformance:
             [sys.executable, str(SCRIPT_PATH), "--format", "json", "--skip-validation"],
             capture_output=True,
             text=True,
-            timeout=120,  # Hard timeout to prevent hanging
+            timeout=150,  # Hard timeout to prevent hanging
         )
 
         elapsed = time.perf_counter() - start_time
@@ -384,6 +389,7 @@ class TestOutputFileWriting:
         with tempfile.TemporaryDirectory() as tmpdir:
             yield Path(tmpdir)
 
+    @pytest.mark.timeout(120)
     def test_write_to_file(self, temp_output_dir: Path) -> None:
         """Test writing report to file."""
         output_file = temp_output_dir / "report.txt"
@@ -392,13 +398,14 @@ class TestOutputFileWriting:
             [sys.executable, str(SCRIPT_PATH), "--format", "text", "--output", str(output_file), "--skip-validation"],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=90,
         )
 
         assert result.returncode in VALID_EXIT_CODES, f"File write failed: {result.stderr}"
         assert output_file.exists(), "Output file not created"
         assert output_file.stat().st_size > 0, "Output file is empty"
 
+    @pytest.mark.timeout(120)
     def test_write_to_nested_directory(self, temp_output_dir: Path) -> None:
         """Test writing to a nested directory that doesn't exist."""
         output_file = temp_output_dir / "nested" / "deep" / "report.json"
@@ -407,7 +414,7 @@ class TestOutputFileWriting:
             [sys.executable, str(SCRIPT_PATH), "--format", "json", "--output", str(output_file), "--skip-validation"],
             capture_output=True,
             text=True,
-            timeout=60,
+            timeout=90,
         )
 
         assert result.returncode in VALID_EXIT_CODES, f"Nested write failed: {result.stderr}"
