@@ -13,6 +13,9 @@ on:
     # Run daily at 6 AM UTC to catch any macOS updates that break things
     - cron: '0 6 * * *'
 
+permissions:
+  contents: read
+
 env:
   PYTHON_VERSION: '3.12'
   # Performance threshold in seconds (60s baseline for CI VMs)
