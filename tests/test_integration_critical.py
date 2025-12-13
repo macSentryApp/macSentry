@@ -212,9 +212,9 @@ class TestCriticalChecksRegistry:
             if getattr(cls, "severity", None) == Severity.CRITICAL
         ]
 
-        # We should have exactly 2 critical checks
-        assert len(critical_checks) == 2, (
-            f"Expected 2 critical checks, found {len(critical_checks)}: "
+        # We should have exactly 3 critical checks
+        assert len(critical_checks) == 3, (
+            f"Expected 3 critical checks, found {len(critical_checks)}: "
             f"{[c.name for c in critical_checks]}"
         )
 
@@ -222,6 +222,7 @@ class TestCriticalChecksRegistry:
         check_names = {cls.name for cls in critical_checks}
         assert "FileVault Encryption" in check_names
         assert "System Integrity Protection" in check_names
+        assert "Firmware Password" in check_names
 
     def test_critical_checks_have_required_attributes(self) -> None:
         """Verify critical checks have all required attributes."""

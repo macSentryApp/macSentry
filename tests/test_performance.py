@@ -30,6 +30,7 @@ MEMORY_THRESHOLD_MB = float(
 )
 
 SCRIPT_PATH = Path(__file__).parent.parent / "src" / "macsentry" / "macos_security_audit.py"
+PROJECT_ROOT = Path(__file__).parent.parent
 
 
 class TestExecutionTime:
@@ -40,10 +41,11 @@ class TestExecutionTime:
         start = time.perf_counter()
 
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "json"],
+            [sys.executable, "-m", "macsentry", "--format", "json"],
             capture_output=True,
             text=True,
             timeout=120,
+            cwd=str(PROJECT_ROOT / "src"),
         )
 
         elapsed = time.perf_counter() - start
@@ -63,10 +65,11 @@ class TestExecutionTime:
         start = time.perf_counter()
 
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--dry-run"],
+            [sys.executable, "-m", "macsentry", "--dry-run"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(PROJECT_ROOT / "src"),
         )
 
         elapsed = time.perf_counter() - start
@@ -79,20 +82,22 @@ class TestExecutionTime:
         # Time full audit
         start = time.perf_counter()
         subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "json"],
+            [sys.executable, "-m", "macsentry", "--format", "json"],
             capture_output=True,
             text=True,
             timeout=120,
+            cwd=str(PROJECT_ROOT / "src"),
         )
         full_time = time.perf_counter() - start
 
         # Time single category
         start = time.perf_counter()
         subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--categories", "encryption", "--format", "json"],
+            [sys.executable, "-m", "macsentry", "--categories", "encryption", "--format", "json"],
             capture_output=True,
             text=True,
             timeout=60,
+            cwd=str(PROJECT_ROOT / "src"),
         )
         single_time = time.perf_counter() - start
 
@@ -129,8 +134,8 @@ class TestMemoryUsage:
         baseline_memory = process.memory_info().rss / (1024 * 1024)  # MB
 
         # Import and run
-        from checks import load_checks
-        from checks.base import CheckRegistry
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry
 
         load_checks()
 
@@ -166,8 +171,8 @@ class TestMemoryUsage:
             pytest.skip("psutil not installed")
             return
 
-        from checks import load_checks
-        from checks.base import CheckRegistry
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry
 
         load_checks()
         checks = [cls() for cls in CheckRegistry.get_all()]
@@ -199,8 +204,8 @@ class TestIndividualCheckPerformance:
 
     def test_all_checks_complete_in_reasonable_time(self) -> None:
         """Verify each check completes in under 10 seconds."""
-        from checks import load_checks
-        from checks.base import CheckRegistry
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry
 
         load_checks()
 
@@ -225,8 +230,8 @@ class TestIndividualCheckPerformance:
 
     def test_critical_checks_fast(self) -> None:
         """Verify critical checks are particularly fast."""
-        from checks import load_checks
-        from checks.base import CheckRegistry, Severity
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry, Severity
 
         load_checks()
 
@@ -253,8 +258,8 @@ class TestConcurrencyPerformance:
     def test_parallel_execution_faster(self) -> None:
         """Verify parallel execution is faster than sequential."""
         import concurrent.futures
-        from checks import load_checks
-        from checks.base import CheckRegistry
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry
 
         load_checks()
         check_classes = list(CheckRegistry.get_all())[:10]  # Test subset
@@ -293,9 +298,9 @@ class TestOutputGenerationPerformance:
 
     def test_json_generation_fast(self) -> None:
         """Verify JSON report generation is fast."""
-        from checks import load_checks
-        from checks.base import CheckRegistry, CheckResult, Status, Severity
-        from utils.reporting import format_json_report
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckRegistry, CheckResult, Status, Severity
+        from macsentry.utils.reporting import format_json_report
 
         load_checks()
 
@@ -321,9 +326,9 @@ class TestOutputGenerationPerformance:
 
     def test_html_generation_fast(self) -> None:
         """Verify HTML report generation is fast."""
-        from checks import load_checks
-        from checks.base import CheckResult, Status, Severity
-        from utils.reporting import format_html_report
+        from macsentry.checks import load_checks
+        from macsentry.checks.base import CheckResult, Status, Severity
+        from macsentry.utils.reporting import format_html_report
 
         load_checks()
 
@@ -349,8 +354,8 @@ class TestOutputGenerationPerformance:
 
     def test_text_generation_fast(self) -> None:
         """Verify text report generation is fast."""
-        from checks.base import CheckResult, Status, Severity
-        from utils.reporting import format_text_report
+        from macsentry.checks.base import CheckResult, Status, Severity
+        from macsentry.utils.reporting import format_text_report
 
         # Generate mock results
         results = [

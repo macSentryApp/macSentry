@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import shlex
 from pathlib import Path
+from subprocess import TimeoutExpired
 from typing import Iterable, List
 
 from .base import CheckResult, SecurityCheck, Severity, Status
