@@ -86,10 +86,10 @@ jobs:
       - name: Verify project structure
         run: |
           echo "=== Project Structure Check ==="
-          test -f macos_security_audit.py || (echo "ERROR: Main script not found" && exit 1)
-          test -d checks || (echo "ERROR: checks directory not found" && exit 1)
-          test -d utils || (echo "ERROR: utils directory not found" && exit 1)
-          test -d core || (echo "ERROR: core directory not found" && exit 1)
+          test -f src/macsentry/macos_security_audit.py || (echo "ERROR: Main script not found" && exit 1)
+          test -d src/macsentry/checks || (echo "ERROR: checks directory not found" && exit 1)
+          test -d src/macsentry/utils || (echo "ERROR: utils directory not found" && exit 1)
+          test -d src/macsentry/core || (echo "ERROR: core directory not found" && exit 1)
           echo "✓ All required files and directories present"
 
       - name: Run smoke tests
@@ -97,50 +97,61 @@ jobs:
           python -m pytest tests/test_smoke.py -v --tb=short --timeout=60
         env:
           SMOKE_TEST_PERFORMANCE_THRESHOLD: ${{ env.PERFORMANCE_THRESHOLD }}
+          PYTHONPATH: src
 
       - name: Basic functionality check - Help
         run: |
           echo "=== Testing --help ==="
-          python macos_security_audit.py --help
+          python -m macsentry.cli --help
           echo "✓ Help command works"
+        env:
+          PYTHONPATH: src
 
       - name: Basic functionality check - Dry run
         run: |
           echo "=== Testing --dry-run ==="
-          python macos_security_audit.py --dry-run
+          python -m macsentry.cli --dry-run
           echo "✓ Dry run works"
+        env:
+          PYTHONPATH: src
 
       - name: Basic functionality check - Text output
         run: |
           echo "=== Testing text output ==="
           # Exit codes 0, 2, 3 are valid (audit may find issues on runner)
-          (python macos_security_audit.py --format text --verbose 2>&1 || true) | head -100
+          (python -m macsentry.cli --format text --verbose 2>&1 || true) | head -100
           echo "✓ Text output works"
+        env:
+          PYTHONPATH: src
 
       - name: Basic functionality check - JSON output
         run: |
           echo "=== Testing JSON output ==="
           # Exit codes 0, 2, 3 are valid (0=pass, 2=issues found, 3=warnings)
           # Capture JSON output (stdout only), let stderr show in logs
-          output=$(python macos_security_audit.py --format json 2>/dev/null) || exit_code=$?
+          output=$(python -m macsentry.cli --format json 2>/dev/null) || exit_code=$?
           # Only fail on exit code 1 (actual error)
           if [ "${exit_code:-0}" -eq 1 ]; then
             echo "ERROR: Script failed with exit code 1"
             exit 1
           fi
           echo "$output" | python -c "import sys, json; json.load(sys.stdin)" && echo "✓ Valid JSON output"
+        env:
+          PYTHONPATH: src
 
       - name: Basic functionality check - HTML output
         run: |
           echo "=== Testing HTML output ==="
           # Exit codes 0, 2, 3 are valid (audit may find issues on runner)
-          python macos_security_audit.py --format html --output /tmp/report.html || exit_code=$?
+          python -m macsentry.cli --format html --output /tmp/report.html || exit_code=$?
           if [ "${exit_code:-0}" -eq 1 ]; then
             echo "ERROR: Script failed with exit code 1"
             exit 1
           fi
           test -f /tmp/report.html && echo "✓ HTML file created"
           grep -q "<html" /tmp/report.html && echo "✓ HTML content valid"
+        env:
+          PYTHONPATH: src
 
       - name: Performance baseline check
         run: |
@@ -150,7 +161,7 @@ jobs:
           echo "Architecture: $arch"
           start_time=$(python -c "import time; print(time.time())")
           # Exit codes 0, 2, 3 are valid (audit may find issues on runner)
-          python macos_security_audit.py --format json > /dev/null 2>&1 || true
+          python -m macsentry.cli --format json > /dev/null 2>&1 || true
           end_time=$(python -c "import time; print(time.time())")
           duration=$(python -c "print(round($end_time - $start_time, 2))")
           echo "Execution time: ${duration}s"
@@ -174,11 +185,13 @@ jobs:
           else:
               print(f'✓ Performance OK: {duration}s < {threshold}s threshold')
           "
+        env:
+          PYTHONPATH: src
 
       - name: Exit code validation
         run: |
           echo "=== Exit Code Test ==="
-          python macos_security_audit.py --dry-run
+          python -m macsentry.cli --dry-run
           exit_code=$?
           if [ $exit_code -eq 0 ]; then
             echo "✓ Clean exit (code 0)"
@@ -186,25 +199,31 @@ jobs:
             echo "✗ Unexpected exit code: $exit_code"
             exit 1
           fi
+        env:
+          PYTHONPATH: src
 
       - name: Category filter test
         run: |
           echo "=== Category Filter Test ==="
-          python macos_security_audit.py --categories encryption --dry-run
-          python macos_security_audit.py --categories firewall,privacy --dry-run
+          python -m macsentry.cli --categories encryption --dry-run
+          python -m macsentry.cli --categories firewall,privacy --dry-run
           echo "✓ Category filtering works"
+        env:
+          PYTHONPATH: src
 
       - name: Severity filter test
         run: |
           echo "=== Severity Filter Test ==="
-          python macos_security_audit.py --min-severity HIGH --dry-run
+          python -m macsentry.cli --min-severity HIGH --dry-run
           # Exit codes 0, 2, 3 are valid (audit may find issues on runner)
-          python macos_security_audit.py --min-severity CRITICAL --format json > /dev/null || exit_code=$?
+          python -m macsentry.cli --min-severity CRITICAL --format json > /dev/null || exit_code=$?
           if [ "${exit_code:-0}" -eq 1 ]; then
             echo "ERROR: Script failed with exit code 1"
             exit 1
           fi
           echo "✓ Severity filtering works"
+        env:
+          PYTHONPATH: src
 
       - name: Architecture compatibility test
         run: |
@@ -223,9 +242,9 @@ jobs:
           fi
           
           # Test that all checks load correctly on this architecture
-          python -c "
-          from checks import load_checks
-          from checks.base import CheckRegistry
+          PYTHONPATH=src python -c "
+          from macsentry.checks import load_checks
+          from macsentry.checks.base import CheckRegistry
           
           load_checks()
           checks = CheckRegistry.get_all()
@@ -320,7 +339,7 @@ jobs:
         run: |
           echo "=== Full Audit on ${{ matrix.arch_name }} ==="
           # Run full audit and capture results
-          python macos_security_audit.py --format json --output /tmp/audit_${{ matrix.arch }}.json || exit_code=$?
+          python -m macsentry.cli --format json --output /tmp/audit_${{ matrix.arch }}.json || exit_code=$?
           
           # Only fail on exit code 1 (actual error)
           if [ "${exit_code:-0}" -eq 1 ]; then
@@ -336,11 +355,13 @@ jobs:
               data = json.load(f)
           
           print(f'Audit completed on ${{ matrix.arch_name }}')
-          print(f'Total checks: {data.get("summary", {}).get("total_checks", "N/A")}')
-          print(f'Passed: {data.get("summary", {}).get("passed", "N/A")}')
-          print(f'Failed: {data.get("summary", {}).get("failed", "N/A")}')
+          print(f'Total checks: {data.get(\"summary\", {}).get(\"total_checks\", \"N/A\")}')
+          print(f'Passed: {data.get(\"summary\", {}).get(\"passed\", \"N/A\")}')
+          print(f'Failed: {data.get(\"summary\", {}).get(\"failed\", \"N/A\")}')
           "
           echo "✓ Full audit completed on ${{ matrix.arch_name }}"
+        env:
+          PYTHONPATH: src
 
       - name: Upload architecture-specific results
         uses: actions/upload-artifact@v4
