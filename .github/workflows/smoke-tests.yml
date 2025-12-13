@@ -307,7 +307,7 @@ jobs:
       - name: Test macOS-specific system calls
         run: |
           echo "=== macOS System Calls Test ==="
-          python -c "
+          python3 << 'EOF'
           import subprocess
           import platform
           
@@ -333,7 +333,7 @@ jobs:
                   print(f'⚠️ {" ".join(cmd)}: {e}')
           
           print('✓ System calls test completed')
-          "
+          EOF
 
       - name: Run full audit on ${{ matrix.arch_name }}
         run: |
