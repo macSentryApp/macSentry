@@ -43,10 +43,12 @@ jobs:
       - name: Run tests with coverage
         run: |
           python -m pytest tests/ \
-            --cov=checks --cov=utils --cov=core \
+            --cov=src/macsentry/checks --cov=src/macsentry/utils --cov=src/macsentry/core \
             --cov-report=term-missing \
             --cov-report=xml:coverage.xml \
             --cov-fail-under=${{ env.MIN_COVERAGE }}
+        env:
+          PYTHONPATH: src
         continue-on-error: false
 
       - name: Upload coverage report
@@ -58,7 +60,9 @@ jobs:
       - name: Coverage summary
         run: |
           echo "## Coverage Report" >> $GITHUB_STEP_SUMMARY
-          python -m pytest tests/ --cov=checks --cov=utils --cov=core --cov-report=term 2>&1 | tail -20 >> $GITHUB_STEP_SUMMARY
+          python -m pytest tests/ --cov=src/macsentry/checks --cov=src/macsentry/utils --cov=src/macsentry/core --cov-report=term 2>&1 | tail -20 >> $GITHUB_STEP_SUMMARY
+        env:
+          PYTHONPATH: src
 
   # ============================================================================
   # Critical Check Integration Tests (100% coverage)
@@ -83,13 +87,15 @@ jobs:
       - name: Run critical integration tests
         run: |
           python -m pytest tests/test_integration_critical.py -v --tb=short
+        env:
+          PYTHONPATH: src
 
       - name: Verify critical checks execute
         run: |
           echo "=== Testing Critical Checks Directly ==="
           python -c "
-          from checks import load_checks
-          from checks.base import CheckRegistry, Severity
+          from macsentry.checks import load_checks
+          from macsentry.checks.base import CheckRegistry, Severity
           
           load_checks()
           
@@ -110,6 +116,8 @@ jobs:
           
           print('✓ All critical checks executed successfully')
           "
+        env:
+          PYTHONPATH: src
 
   # ============================================================================
   # Linter Gate (Zero critical/high warnings)
@@ -134,7 +142,7 @@ jobs:
       - name: Flake8 (critical errors only)
         run: |
           # E9xx, F63, F7, F82 are critical errors
-          flake8 checks/ utils/ core/ macos_security_audit.py \
+          flake8 src/macsentry/checks/ src/macsentry/utils/ src/macsentry/core/ src/macsentry/macos_security_audit.py \
             --select=E9,F63,F7,F82 \
             --show-source \
             --statistics
@@ -142,14 +150,14 @@ jobs:
 
       - name: Flake8 (full check, warnings allowed)
         run: |
-          flake8 checks/ utils/ core/ macos_security_audit.py \
+          flake8 src/macsentry/checks/ src/macsentry/utils/ src/macsentry/core/ src/macsentry/macos_security_audit.py \
             --max-line-length=100 \
             --ignore=E501,W503 \
             --statistics || true
 
       - name: Bandit security scan
         run: |
-          bandit -r checks/ utils/ core/ macos_security_audit.py \
+          bandit -r src/macsentry/checks/ src/macsentry/utils/ src/macsentry/core/ src/macsentry/macos_security_audit.py \
             -ll \
             --exit-zero \
             -f txt
@@ -157,14 +165,14 @@ jobs:
 
       - name: Bandit (high severity only - must pass)
         run: |
-          bandit -r checks/ utils/ core/ macos_security_audit.py \
+          bandit -r src/macsentry/checks/ src/macsentry/utils/ src/macsentry/core/ src/macsentry/macos_security_audit.py \
             -ll \
             --severity-level high \
             -f txt
 
       - name: MyPy type checking
         run: |
-          mypy checks/ utils/ core/ macos_security_audit.py \
+          mypy src/macsentry/checks/ src/macsentry/utils/ src/macsentry/core/ src/macsentry/macos_security_audit.py \
             --ignore-missing-imports \
             --no-error-summary || true
 
@@ -194,12 +202,13 @@ jobs:
         env:
           PERFORMANCE_THRESHOLD: ${{ env.PERFORMANCE_THRESHOLD_SECONDS }}
           MEMORY_THRESHOLD_MB: ${{ env.MEMORY_THRESHOLD_MB }}
+          PYTHONPATH: src
 
       - name: Execution time benchmark
         run: |
           echo "=== Execution Time Benchmark ==="
           start=$(python -c "import time; print(time.time())")
-          python macos_security_audit.py --format json > /dev/null 2>&1
+          python -m macsentry.cli --format json > /dev/null 2>&1
           end=$(python -c "import time; print(time.time())")
           duration=$(python -c "print(round($end - $start, 2))")
           echo "Duration: ${duration}s (threshold: ${{ env.PERFORMANCE_THRESHOLD_SECONDS }}s)"
@@ -212,6 +221,8 @@ jobs:
               exit(1)
           print(f'✓ PASS: {duration}s <= {threshold}s')
           "
+        env:
+          PYTHONPATH: src
 
       - name: Memory usage benchmark
         run: |
@@ -227,9 +238,10 @@ jobs:
           
           # Run audit and measure peak memory
           result = subprocess.run(
-              [sys.executable, 'macos_security_audit.py', '--format', 'json'],
+              [sys.executable, '-m', 'macsentry.cli', '--format', 'json'],
               capture_output=True,
-              text=True
+              text=True,
+              env={**os.environ, 'PYTHONPATH': 'src'}
           )
           
           # Note: This measures subprocess memory differently
