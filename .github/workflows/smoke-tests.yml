@@ -339,26 +339,40 @@ jobs:
         run: |
           echo "=== Full Audit on ${{ matrix.arch_name }} ==="
           # Run full audit and capture results
+          exit_code=0
           python -m macsentry.cli --format json --output /tmp/audit_${{ matrix.arch }}.json || exit_code=$?
           
-          # Only fail on exit code 1 (actual error)
-          if [ "${exit_code:-0}" -eq 1 ]; then
+          # Check if audit produced output file
+          if [ ! -f /tmp/audit_${{ matrix.arch }}.json ]; then
+            echo "❌ ERROR: Audit failed to create output file (exit code: $exit_code)"
+            echo "Checking if macsentry module is available..."
+            python -c "import macsentry; print('macsentry module found')" || echo "macsentry module not found"
+            exit 1
+          fi
+          
+          # Only fail on exit code 1 (actual error), exit code 2 means security issues found (expected)
+          if [ "$exit_code" -eq 1 ]; then
             echo "❌ ERROR: Audit failed with exit code 1"
             cat /tmp/audit_${{ matrix.arch }}.json 2>/dev/null || true
             exit 1
           fi
           
           # Parse and display results
-          python -c "
+          python3 << 'PARSE_EOF'
           import json
-          with open('/tmp/audit_${{ matrix.arch }}.json') as f:
-              data = json.load(f)
+          import os
           
-          print(f'Audit completed on ${{ matrix.arch_name }}')
-          print(f'Total checks: {data.get(\"summary\", {}).get(\"total_checks\", \"N/A\")}')
-          print(f'Passed: {data.get(\"summary\", {}).get(\"passed\", \"N/A\")}')
-          print(f'Failed: {data.get(\"summary\", {}).get(\"failed\", \"N/A\")}')
-          "
+          json_file = '/tmp/audit_${{ matrix.arch }}.json'
+          if os.path.exists(json_file):
+              with open(json_file) as f:
+                  data = json.load(f)
+              print(f'Audit completed on ${{ matrix.arch_name }}')
+              print(f'Total checks: {data.get("summary", {}).get("total_checks", "N/A")}')
+              print(f'Passed: {data.get("summary", {}).get("passed", "N/A")}')
+              print(f'Failed: {data.get("summary", {}).get("failed", "N/A")}')
+          else:
+              print('Warning: JSON output file not found')
+          PARSE_EOF
           echo "✓ Full audit completed on ${{ matrix.arch_name }}"
         env:
           PYTHONPATH: src
