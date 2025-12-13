@@ -24,7 +24,7 @@ jobs:
   # Unit Test Coverage Gate (70%+)
   # ============================================================================
   coverage:
-    name: Test Coverage (≥${{ env.MIN_COVERAGE }}%)
+    name: Test Coverage (≥70%)
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
