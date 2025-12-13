@@ -832,7 +832,7 @@ class Console:
             print(f"  {Theme.BORDER}├{'─' * width}┤{Colors.RESET}")
             
             # Footer with links
-            print(f"  {Theme.BORDER}{Icons.BOX_V}{Colors.RESET}  📚 {Theme.TEXT_DIM}Detailed remediation: macsentry.app/docs{Colors.RESET}{' ' * 6}{Theme.BORDER}{Icons.BOX_V}{Colors.RESET}")
+            print(f"  {Theme.BORDER}{Icons.BOX_V}{Colors.RESET}  📚 {Theme.TEXT_DIM}Detailed remediation: https://macsentry.app/docs{Colors.RESET}{Theme.BORDER}{Icons.BOX_V}{Colors.RESET}")
             print(f"  {Theme.BORDER}{Icons.BOX_V}{Colors.RESET}  💾 {Theme.TEXT_DIM}Export results: macsentry --format json{Colors.RESET}{' ' * 7}{Theme.BORDER}{Icons.BOX_V}{Colors.RESET}")
             print(f"  {Theme.BORDER}{Icons.BOX_V}{Colors.RESET}  🔄 {Theme.TEXT_DIM}Schedule daily: macsentry --install-schedule{Colors.RESET}{' ' * 2}{Theme.BORDER}{Icons.BOX_V}{Colors.RESET}")
             
