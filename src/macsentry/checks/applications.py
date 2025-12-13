@@ -437,7 +437,7 @@ class QuarantineEnforcementCheck(SecurityCheck):
     remediation = "Enable quarantine by setting LSQuarantine to true via defaults."
 
     def run(self) -> CheckResult:
-        from utils.commands import run_defaults_for_user
+        from macsentry.utils.commands import run_defaults_for_user
         
         try:
             # Use run_defaults_for_user to properly read user preferences when running as root
@@ -538,7 +538,7 @@ class SafariSecuritySettingsCheck(SecurityCheck):
     )
 
     def run(self) -> CheckResult:
-        from utils.commands import run_defaults_for_user
+        from macsentry.utils.commands import run_defaults_for_user
         
         # Check if Safari exists
         safari_app = Path("/Applications/Safari.app")

@@ -380,7 +380,7 @@ class AirDropDiscoverabilityCheck(SecurityCheck):
     remediation = "Set AirDrop to Contacts Only or Off in Control Center."
 
     def run(self) -> CheckResult:
-        from utils.commands import run_defaults_for_user
+        from macsentry.utils.commands import run_defaults_for_user
         
         # Try with -currentHost first, then without
         # Use run_defaults_for_user to handle sudo/root correctly
@@ -480,7 +480,7 @@ class BluetoothDiscoverabilityCheck(SecurityCheck):
     )
 
     def run(self) -> CheckResult:
-        from utils.commands import run_command_graceful
+        from macsentry.utils.commands import run_command_graceful
         
         # Check if Bluetooth is powered on
         try:

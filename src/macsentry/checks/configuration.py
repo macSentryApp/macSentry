@@ -30,7 +30,7 @@ class FirmwarePasswordCheck(SecurityCheck):
 
     def run(self) -> CheckResult:
         # Double-check we're on Intel (in case check runs directly)
-        from utils.system_info import get_hardware_info
+        from macsentry.utils.system_info import get_hardware_info
         hw = get_hardware_info()
         
         if hw.chip_type == "apple_silicon":
@@ -119,7 +119,7 @@ class SecureBootCheck(SecurityCheck):
     requires_t2_or_secure_enclave = True  # Only Macs with security chips support secure boot
 
     def run(self) -> CheckResult:
-        from utils.system_info import get_hardware_info, SecurityChipType
+        from macsentry.utils.system_info import get_hardware_info, SecurityChipType
         hw = get_hardware_info()
         
         # Check if Mac has secure boot hardware
@@ -436,7 +436,7 @@ class MDMEnrollmentCheck(SecurityCheck):
     remediation = "Review MDM policies with your IT administrator if unexpected."
 
     def run(self) -> CheckResult:
-        from utils.system_info import detect_mdm_enrollment
+        from macsentry.utils.system_info import detect_mdm_enrollment
         
         is_enrolled, mdm_server = detect_mdm_enrollment()
         
@@ -475,7 +475,7 @@ class RosettaProcessCheck(SecurityCheck):
     requires_apple_silicon = True  # Only applicable on Apple Silicon Macs
 
     def run(self) -> CheckResult:
-        from utils.system_info import is_running_under_rosetta
+        from macsentry.utils.system_info import is_running_under_rosetta
         
         if is_running_under_rosetta():
             return CheckResult(
@@ -510,7 +510,7 @@ class SecureEnclaveCheck(SecurityCheck):
     remediation = "Macs with T2 chip (2018+) or Apple Silicon have Secure Enclave."
 
     def run(self) -> CheckResult:
-        from utils.system_info import get_hardware_info, SecurityChipType
+        from macsentry.utils.system_info import get_hardware_info, SecurityChipType
         
         hw = get_hardware_info()
         
@@ -563,7 +563,7 @@ class NetworkConnectivityCheck(SecurityCheck):
     remediation = "Connect to the internet to enable software update checks."
 
     def run(self) -> CheckResult:
-        from utils.system_info import check_network_connectivity
+        from macsentry.utils.system_info import check_network_connectivity
         
         if check_network_connectivity():
             return CheckResult(

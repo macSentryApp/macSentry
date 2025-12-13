@@ -340,7 +340,7 @@ class SoftwareUpdatePendingCheck(SecurityCheck):
 
     def run(self) -> CheckResult:
         # Check network connectivity first for live update check
-        from utils.system_info import check_network_connectivity
+        from macsentry.utils.system_info import check_network_connectivity
         is_online = check_network_connectivity()
         
         # First try the fast method: check RecommendedUpdates in plist

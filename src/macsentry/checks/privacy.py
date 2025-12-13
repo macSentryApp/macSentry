@@ -253,7 +253,7 @@ class CameraPermissionsCheck(_TCCPermissionMixin, SecurityCheck):
 
     def run(self) -> CheckResult:
         # Check if device has built-in camera
-        from utils.system_info import get_hardware_info
+        from macsentry.utils.system_info import get_hardware_info
         hw = get_hardware_info()
         
         if not hw.has_builtin_camera:
@@ -380,7 +380,7 @@ class MicrophonePermissionsCheck(_TCCPermissionMixin, SecurityCheck):
 
     def run(self) -> CheckResult:
         # Check if device has built-in microphone
-        from utils.system_info import get_hardware_info
+        from macsentry.utils.system_info import get_hardware_info
         hw = get_hardware_info()
         
         if not hw.has_builtin_mic:

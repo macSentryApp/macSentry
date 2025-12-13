@@ -23,20 +23,32 @@ env:
 
 jobs:
   smoke-test:
-    name: Smoke Test (${{ matrix.os }})
+    name: Smoke Test (${{ matrix.os }} / Python ${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}
     timeout-minutes: 20
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, macos-14]  # macos-14 is M1/M2 (Apple Silicon)
-        python-version: ['3.10', '3.11', '3.12']
+        # Comprehensive macOS coverage:
+        # - macos-13: Intel (x86_64) - Ventura
+        # - macos-14: Apple Silicon (arm64) - Sonoma
+        # - macos-15: Apple Silicon (arm64) - Sequoia
+        os: [macos-13, macos-14, macos-15]
+        python-version: ['3.10', '3.11', '3.12', '3.13']
         exclude:
-          # Only test all Python versions on latest macOS
-          - os: macos-14
-            python-version: '3.10'
+          # Focus Python version testing on latest macOS, test oldest+newest on others
+          - os: macos-13
+            python-version: '3.11'
+          - os: macos-13
+            python-version: '3.13'
           - os: macos-14
             python-version: '3.11'
+          - os: macos-14
+            python-version: '3.13'
+        include:
+          # Explicitly include macos-latest to track GitHub's latest designation
+          - os: macos-latest
+            python-version: '3.12'
 
     steps:
       - name: Checkout repository
@@ -56,6 +68,15 @@ jobs:
           python --version
           echo "Architecture: $(uname -m)"
           echo "CPU: $(sysctl -n machdep.cpu.brand_string 2>/dev/null || echo 'Apple Silicon')"
+          echo "Runner: ${{ matrix.os }}"
+          echo "Processor count: $(sysctl -n hw.ncpu)"
+          echo "Memory: $(sysctl -n hw.memsize | awk '{print $0/1024/1024/1024 " GB"}')"
+          # Detect if running on Intel or Apple Silicon
+          if [ "$(uname -m)" = "x86_64" ]; then
+            echo "Platform: Intel (x86_64)"
+          else
+            echo "Platform: Apple Silicon (arm64)"
+          fi
 
       - name: Install dependencies
         run: |
@@ -125,6 +146,8 @@ jobs:
         run: |
           echo "=== Performance Test ==="
           echo "Threshold: ${PERFORMANCE_THRESHOLD}s"
+          arch=$(uname -m)
+          echo "Architecture: $arch"
           start_time=$(python -c "import time; print(time.time())")
           # Exit codes 0, 2, 3 are valid (audit may find issues on runner)
           python macos_security_audit.py --format json > /dev/null 2>&1 || true
@@ -132,16 +155,22 @@ jobs:
           duration=$(python -c "print(round($end_time - $start_time, 2))")
           echo "Execution time: ${duration}s"
           
-          # Check if within threshold
+          # Check if within threshold - stricter on Apple Silicon
           python -c "
           import sys
+          import subprocess
           duration = float('$duration')
           threshold = float('$PERFORMANCE_THRESHOLD')
+          arch = '$arch'
+          
           if duration > threshold:
               print(f'⚠️ WARNING: Execution time ({duration}s) exceeds threshold ({threshold}s)')
-              # Don't fail on Intel Macs, just warn
-              if '${{ matrix.os }}' == 'macos-14':
+              # Fail on Apple Silicon (arm64), just warn on Intel (x86_64)
+              if arch == 'arm64':
+                  print('❌ FAIL: Apple Silicon should meet performance threshold')
                   sys.exit(1)
+              else:
+                  print('⚠️ Intel runner - warning only')
           else:
               print(f'✓ Performance OK: {duration}s < {threshold}s threshold')
           "
@@ -177,19 +206,192 @@ jobs:
           fi
           echo "✓ Severity filtering works"
 
+      - name: Architecture compatibility test
+        run: |
+          echo "=== Architecture Compatibility Test ==="
+          arch=$(uname -m)
+          echo "Testing on architecture: $arch"
+          
+          # Verify Python binary architecture matches system
+          python_arch=$(python -c "import platform; print(platform.machine())")
+          echo "Python architecture: $python_arch"
+          
+          if [ "$arch" != "$python_arch" ]; then
+            echo "⚠️ WARNING: Architecture mismatch - may be running under Rosetta"
+          else
+            echo "✓ Native architecture confirmed"
+          fi
+          
+          # Test that all checks load correctly on this architecture
+          python -c "
+          from checks import load_checks
+          from checks.base import CheckRegistry
+          
+          load_checks()
+          checks = CheckRegistry.get_all()
+          print(f'Loaded {len(checks)} checks on $(uname -m)')
+          
+          # Verify each check can be instantiated
+          for cls in checks:
+              try:
+                  instance = cls()
+                  print(f'  ✓ {cls.name}')
+              except Exception as e:
+                  print(f'  ✗ {cls.name}: {e}')
+                  exit(1)
+          
+          print(f'✓ All checks compatible with $(uname -m)')
+          "
+
+  # Architecture-specific deep tests (run on each architecture)
+  architecture-tests:
+    name: Architecture Deep Test (${{ matrix.runner }})
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Intel x86_64 runner
+          - runner: macos-13
+            arch: x86_64
+            arch_name: Intel
+          # Apple Silicon arm64 runner
+          - runner: macos-14
+            arch: arm64
+            arch_name: Apple Silicon
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Verify architecture
+        run: |
+          echo "=== Architecture Verification ==="
+          expected_arch="${{ matrix.arch }}"
+          actual_arch=$(uname -m)
+          echo "Expected: $expected_arch"
+          echo "Actual: $actual_arch"
+          
+          if [ "$expected_arch" != "$actual_arch" ]; then
+            echo "❌ ERROR: Architecture mismatch!"
+            exit 1
+          fi
+          echo "✓ Running on expected ${{ matrix.arch_name }} (${{ matrix.arch }}) architecture"
+
+      - name: Test macOS-specific system calls
+        run: |
+          echo "=== macOS System Calls Test ==="
+          python -c "
+          import subprocess
+          import platform
+          
+          print(f'Platform: {platform.platform()}')
+          print(f'Machine: {platform.machine()}')
+          print(f'Processor: {platform.processor()}')
+          
+          # Test common macOS commands used by security checks
+          commands = [
+              ['sw_vers', '-productVersion'],
+              ['system_profiler', 'SPSoftwareDataType'],
+              ['defaults', 'read', '/Library/Preferences/com.apple.SoftwareUpdate', 'AutomaticCheckEnabled'],
+              ['csrutil', 'status'],
+              ['spctl', '--status'],
+          ]
+          
+          for cmd in commands:
+              try:
+                  result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+                  status = '✓' if result.returncode == 0 else '⚠️'
+                  print(f'{status} {" ".join(cmd)}: exit code {result.returncode}')
+              except Exception as e:
+                  print(f'⚠️ {" ".join(cmd)}: {e}')
+          
+          print('✓ System calls test completed')
+          "
+
+      - name: Run full audit on ${{ matrix.arch_name }}
+        run: |
+          echo "=== Full Audit on ${{ matrix.arch_name }} ==="
+          # Run full audit and capture results
+          python macos_security_audit.py --format json --output /tmp/audit_${{ matrix.arch }}.json || exit_code=$?
+          
+          # Only fail on exit code 1 (actual error)
+          if [ "${exit_code:-0}" -eq 1 ]; then
+            echo "❌ ERROR: Audit failed with exit code 1"
+            cat /tmp/audit_${{ matrix.arch }}.json 2>/dev/null || true
+            exit 1
+          fi
+          
+          # Parse and display results
+          python -c "
+          import json
+          with open('/tmp/audit_${{ matrix.arch }}.json') as f:
+              data = json.load(f)
+          
+          print(f'Audit completed on ${{ matrix.arch_name }}')
+          print(f'Total checks: {data.get("summary", {}).get("total_checks", "N/A")}')
+          print(f'Passed: {data.get("summary", {}).get("passed", "N/A")}')
+          print(f'Failed: {data.get("summary", {}).get("failed", "N/A")}')
+          "
+          echo "✓ Full audit completed on ${{ matrix.arch_name }}"
+
+      - name: Upload architecture-specific results
+        uses: actions/upload-artifact@v4
+        with:
+          name: audit-results-${{ matrix.arch }}
+          path: /tmp/audit_${{ matrix.arch }}.json
+          retention-days: 7
+
   # Summary job that reports overall status
   smoke-test-summary:
     name: Smoke Test Summary
-    needs: smoke-test
+    needs: [smoke-test, architecture-tests]
     runs-on: ubuntu-latest
     if: always()
     steps:
       - name: Check smoke test results
         run: |
+          echo "## Smoke Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          # Check smoke tests
           if [ "${{ needs.smoke-test.result }}" == "success" ]; then
-            echo "✅ All smoke tests passed!"
+            echo "✅ **Smoke Tests**: PASSED" >> $GITHUB_STEP_SUMMARY
+            smoke_ok=true
+          else
+            echo "❌ **Smoke Tests**: FAILED" >> $GITHUB_STEP_SUMMARY
+            smoke_ok=false
+          fi
+          
+          # Check architecture tests
+          if [ "${{ needs.architecture-tests.result }}" == "success" ]; then
+            echo "✅ **Architecture Tests**: PASSED" >> $GITHUB_STEP_SUMMARY
+            arch_ok=true
+          else
+            echo "❌ **Architecture Tests**: FAILED" >> $GITHUB_STEP_SUMMARY
+            arch_ok=false
+          fi
+          
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Matrix Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "- **macOS Versions**: Ventura (13), Sonoma (14), Sequoia (15)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Architectures**: Intel (x86_64), Apple Silicon (arm64)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Python Versions**: 3.10, 3.11, 3.12, 3.13" >> $GITHUB_STEP_SUMMARY
+          
+          # Final result
+          if [ "$smoke_ok" = true ] && [ "$arch_ok" = true ]; then
+            echo ""
+            echo "🎉 All tests passed across all macOS versions and architectures!"
             exit 0
           else
-            echo "❌ Some smoke tests failed"
+            echo ""
+            echo "❌ Some tests failed - check individual job results"
             exit 1
           fi
