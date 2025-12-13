@@ -8,6 +8,8 @@ import logging
 import logging.handlers
 import os
 import platform
+import shutil
+import subprocess
 import sys
 import time
 from collections import Counter
@@ -228,6 +230,160 @@ def _generate_timestamped_path(base_path: Path) -> Path:
     return base_path.parent / f"{stem}_{timestamp}{suffix}"
 
 
+# Launchd schedule constants
+_LAUNCHD_LABEL = "com.macsentry.audit"
+_PLIST_FILENAME = f"{_LAUNCHD_LABEL}.plist"
+_LAUNCH_AGENTS_DIR = Path.home() / "Library" / "LaunchAgents"
+
+
+def _get_macsentry_executable() -> str:
+    """Get the path to the macsentry executable."""
+    # Try to find macsentry in PATH
+    macsentry_path = shutil.which("macsentry")
+    if macsentry_path:
+        return macsentry_path
+    # Fallback to python module execution
+    return f"{sys.executable} -m macsentry"
+
+
+def _install_schedule(console: Console) -> int:
+    """Install launchd agent for scheduled security audits.
+    
+    Creates a LaunchAgent plist that runs macsentry daily at 9:00 AM.
+    Returns 0 on success, 1 on failure.
+    """
+    plist_path = _LAUNCH_AGENTS_DIR / _PLIST_FILENAME
+    domain_target = f"gui/{os.getuid()}"
+    
+    # Determine executable path
+    macsentry_exec = _get_macsentry_executable()
+    
+    # Build plist content
+    if "python" in macsentry_exec or "-m" in macsentry_exec:
+        # Module-based execution
+        program_args = f"""    <array>
+        <string>{sys.executable}</string>
+        <string>-m</string>
+        <string>macsentry</string>
+        <string>--format</string>
+        <string>json</string>
+        <string>-o</string>
+        <string>{_LOG_DIR}/daily-audit.json</string>
+    </array>"""
+    else:
+        # Direct executable
+        program_args = f"""    <array>
+        <string>{macsentry_exec}</string>
+        <string>--format</string>
+        <string>json</string>
+        <string>-o</string>
+        <string>{_LOG_DIR}/daily-audit.json</string>
+    </array>"""
+    
+    plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{_LAUNCHD_LABEL}</string>
+    <key>ProgramArguments</key>
+{program_args}
+    <key>StartCalendarInterval</key>
+    <dict>
+        <key>Hour</key>
+        <integer>9</integer>
+        <key>Minute</key>
+        <integer>0</integer>
+    </dict>
+    <key>StandardOutPath</key>
+    <string>{_LOG_DIR}/schedule.log</string>
+    <key>StandardErrorPath</key>
+    <string>{_LOG_DIR}/schedule.error</string>
+    <key>RunAtLoad</key>
+    <false/>
+</dict>
+</plist>
+"""
+    
+    try:
+        # Create directories
+        _LAUNCH_AGENTS_DIR.mkdir(parents=True, exist_ok=True)
+        _LOG_DIR.mkdir(parents=True, exist_ok=True)
+        
+        # Unload existing agent if present
+        subprocess.run(
+            ["launchctl", "bootout", f"{domain_target}/{_LAUNCHD_LABEL}"],
+            capture_output=True,
+            check=False,
+        )
+        
+        # Write plist file with secure permissions (owner read/write only)
+        plist_path.write_text(plist_content, encoding="utf-8")
+        plist_path.chmod(0o600)
+        
+        # Load the agent
+        result = subprocess.run(
+            ["launchctl", "bootstrap", domain_target, str(plist_path)],
+            capture_output=True,
+            text=True,
+        )
+        
+        if result.returncode != 0:
+            # Try legacy load command
+            result = subprocess.run(
+                ["launchctl", "load", str(plist_path)],
+                capture_output=True,
+                text=True,
+            )
+            if result.returncode != 0:
+                console.error(f"Failed to load LaunchAgent: {result.stderr}")
+                return 1
+        
+        console.success("Scheduled daily security audit installed")
+        console.info("Schedule", "Daily at 9:00 AM")
+        console.info("Plist", str(plist_path))
+        console.info("Logs", str(_LOG_DIR))
+        console.blank()
+        console.dim("To run immediately: launchctl kickstart -k gui/$(id -u)/com.macsentry.audit")
+        console.dim("To uninstall: macsentry --uninstall-schedule")
+        return 0
+        
+    except OSError as exc:
+        console.error(f"Failed to install schedule: {exc}")
+        return 1
+
+
+def _uninstall_schedule(console: Console) -> int:
+    """Remove launchd agent for scheduled security audits.
+    
+    Returns 0 on success, 1 on failure.
+    """
+    plist_path = _LAUNCH_AGENTS_DIR / _PLIST_FILENAME
+    domain_target = f"gui/{os.getuid()}"
+    
+    if not plist_path.exists():
+        console.warning("No scheduled audit found to uninstall")
+        return 0
+    
+    try:
+        # Unload the agent
+        subprocess.run(
+            ["launchctl", "bootout", f"{domain_target}/{_LAUNCHD_LABEL}"],
+            capture_output=True,
+            check=False,
+        )
+        
+        # Remove plist file
+        plist_path.unlink()
+        
+        console.success("Scheduled security audit removed")
+        return 0
+        
+    except OSError as exc:
+        console.error(f"Failed to uninstall schedule: {exc}")
+        return 1
+
+
 def parse_args(argv: Sequence[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="macSentry - macOS Security Audit",
@@ -314,6 +470,16 @@ Examples:
         "--timestamp",
         action="store_true",
         help="Add timestamp to output filename for historical tracking",
+    )
+    parser.add_argument(
+        "--install-schedule",
+        action="store_true",
+        help="Install launchd agent to run daily security audits at 9:00 AM",
+    )
+    parser.add_argument(
+        "--uninstall-schedule",
+        action="store_true",
+        help="Remove the launchd agent for scheduled security audits",
     )
     return parser.parse_args(argv)
 
@@ -797,6 +963,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     
     # Initialize console
     console = Console()
+    
+    # Handle schedule management commands (early exit)
+    if args.install_schedule:
+        console.banner(compact=True)
+        console.blank()
+        return _install_schedule(console)
+    
+    if args.uninstall_schedule:
+        console.banner(compact=True)
+        console.blank()
+        return _uninstall_schedule(console)
     
     # Print banner (skip in quiet mode)
     if verbosity > VERBOSITY_QUIET:
