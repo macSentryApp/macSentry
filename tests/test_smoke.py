@@ -28,8 +28,12 @@ PERFORMANCE_THRESHOLD_SECONDS = float(
     os.environ.get("SMOKE_TEST_PERFORMANCE_THRESHOLD", "60")
 )
 
-# Path to the main script
+# Path to the main script and src directory for module execution
 SCRIPT_PATH = Path(__file__).parent.parent / "src" / "macsentry" / "macos_security_audit.py"
+SRC_DIR = Path(__file__).parent.parent / "src"
+
+# Module path for -m execution
+MODULE_NAME = "macsentry.macos_security_audit"
 
 # Valid exit codes for successful audit runs:
 # 0 = no issues, 2 = critical/high issues, 3 = warnings/medium issues
@@ -58,10 +62,11 @@ class TestScriptExecution:
     def test_help_command(self) -> None:
         """Test that --help works and shows expected content."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--help"],
+            [sys.executable, "-m", MODULE_NAME, "--help"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0, f"--help failed: {result.stderr}"
         assert "macOS Security Audit" in result.stdout
@@ -71,10 +76,11 @@ class TestScriptExecution:
     def test_dry_run_executes(self) -> None:
         """Test that --dry-run executes without errors."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--dry-run", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--dry-run", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0, f"--dry-run failed: {result.stderr}"
         # Check for dry-run mode output (may use different wording)
@@ -83,10 +89,11 @@ class TestScriptExecution:
     def test_dry_run_lists_checks(self) -> None:
         """Verify dry run lists available checks."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--dry-run", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--dry-run", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0
         # Should list at least some checks (uses bullet point • or - prefix)
@@ -103,10 +110,11 @@ class TestOutputFormats:
     def test_text_output(self) -> None:
         """Test text format output."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "text", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--format", "text", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=90,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode in VALID_EXIT_CODES, f"Text output failed: {result.stderr}"
         # Should contain report header elements
@@ -116,10 +124,11 @@ class TestOutputFormats:
     def test_json_output_valid(self) -> None:
         """Test JSON format produces valid JSON."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "json", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--format", "json", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=90,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode in VALID_EXIT_CODES, f"JSON output failed: {result.stderr}"
 
@@ -138,10 +147,11 @@ class TestOutputFormats:
     def test_json_output_has_system_info(self) -> None:
         """Test JSON output includes system information."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "json", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--format", "json", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=90,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode in VALID_EXIT_CODES
 
@@ -159,10 +169,11 @@ class TestOutputFormats:
 
         try:
             result = subprocess.run(
-                [sys.executable, str(SCRIPT_PATH), "--format", "html", "--output", output_path, "--skip-validation"],
+                [sys.executable, "-m", MODULE_NAME, "--format", "html", "--output", output_path, "--skip-validation"],
                 capture_output=True,
                 text=True,
                 timeout=90,
+                cwd=str(SRC_DIR),
             )
             assert result.returncode in VALID_EXIT_CODES, f"HTML output failed: {result.stderr}"
 
@@ -183,10 +194,11 @@ class TestCategoryFiltering:
     def test_single_category_filter(self) -> None:
         """Test filtering by a single category."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--categories", "encryption", "--dry-run", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--categories", "encryption", "--dry-run", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0, f"Category filter failed: {result.stderr}"
         # All listed checks should be encryption category
@@ -197,10 +209,11 @@ class TestCategoryFiltering:
     def test_multiple_category_filter(self) -> None:
         """Test filtering by multiple categories."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--categories", "encryption,firewall", "--dry-run", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--categories", "encryption,firewall", "--dry-run", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0
         for line in result.stdout.split("\n"):
@@ -212,10 +225,11 @@ class TestCategoryFiltering:
     def test_invalid_category_handled(self) -> None:
         """Test that invalid category doesn't crash."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--categories", "nonexistent_category_xyz", "--dry-run", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--categories", "nonexistent_category_xyz", "--dry-run", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         # Should complete without crashing (may have 0 checks)
         assert result.returncode == 0
@@ -228,10 +242,11 @@ class TestSeverityFiltering:
     def test_severity_levels(self, severity: str) -> None:
         """Test each severity level filter."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--min-severity", severity, "--dry-run", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--min-severity", severity, "--dry-run", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0, f"Severity {severity} failed: {result.stderr}"
 
@@ -242,30 +257,33 @@ class TestExitCodes:
     def test_successful_execution_returns_zero(self) -> None:
         """Test that successful execution returns exit code 0."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--dry-run", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--dry-run", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0, f"Expected exit code 0, got {result.returncode}"
 
     def test_help_returns_zero(self) -> None:
         """Test that --help returns exit code 0."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--help"],
+            [sys.executable, "-m", MODULE_NAME, "--help"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0
 
     def test_invalid_argument_returns_nonzero(self) -> None:
         """Test that invalid arguments return non-zero exit code."""
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--invalid-option-xyz"],
+            [sys.executable, "-m", MODULE_NAME, "--invalid-option-xyz"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode != 0, "Invalid option should return non-zero exit code"
 
@@ -288,10 +306,11 @@ class TestPerformance:
         start_time = time.perf_counter()
 
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "json", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--format", "json", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=150,  # Hard timeout to prevent hanging
+            cwd=str(SRC_DIR),
         )
 
         elapsed = time.perf_counter() - start_time
@@ -313,10 +332,11 @@ class TestPerformance:
         start_time = time.perf_counter()
 
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--dry-run", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--dry-run", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
 
         elapsed = time.perf_counter() - start_time
@@ -330,10 +350,11 @@ class TestPerformance:
         start_time = time.perf_counter()
 
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--help"],
+            [sys.executable, "-m", MODULE_NAME, "--help"],
             capture_output=True,
             text=True,
             timeout=10,
+            cwd=str(SRC_DIR),
         )
 
         elapsed = time.perf_counter() - start_time
@@ -349,33 +370,33 @@ class TestModuleImports:
     def test_main_script_importable(self) -> None:
         """Test that main script can be imported as module."""
         result = subprocess.run(
-            [sys.executable, "-c", "import macos_security_audit"],
+            [sys.executable, "-c", "from macsentry import macos_security_audit"],
             capture_output=True,
             text=True,
             timeout=30,
-            cwd=SCRIPT_PATH.parent,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0, f"Import failed: {result.stderr}"
 
     def test_checks_module_importable(self) -> None:
         """Test that checks module can be imported."""
         result = subprocess.run(
-            [sys.executable, "-c", "from checks import load_checks; load_checks()"],
+            [sys.executable, "-c", "from macsentry.checks import load_checks; load_checks()"],
             capture_output=True,
             text=True,
             timeout=30,
-            cwd=SCRIPT_PATH.parent,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0, f"Checks import failed: {result.stderr}"
 
     def test_utils_module_importable(self) -> None:
         """Test that utils module can be imported."""
         result = subprocess.run(
-            [sys.executable, "-c", "import utils"],
+            [sys.executable, "-c", "from macsentry import utils"],
             capture_output=True,
             text=True,
             timeout=30,
-            cwd=SCRIPT_PATH.parent,
+            cwd=str(SRC_DIR),
         )
         assert result.returncode == 0, f"Utils import failed: {result.stderr}"
 
@@ -395,10 +416,11 @@ class TestOutputFileWriting:
         output_file = temp_output_dir / "report.txt"
 
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "text", "--output", str(output_file), "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--format", "text", "--output", str(output_file), "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=90,
+            cwd=str(SRC_DIR),
         )
 
         assert result.returncode in VALID_EXIT_CODES, f"File write failed: {result.stderr}"
@@ -411,10 +433,11 @@ class TestOutputFileWriting:
         output_file = temp_output_dir / "nested" / "deep" / "report.json"
 
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--format", "json", "--output", str(output_file), "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--format", "json", "--output", str(output_file), "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=90,
+            cwd=str(SRC_DIR),
         )
 
         assert result.returncode in VALID_EXIT_CODES, f"Nested write failed: {result.stderr}"
@@ -437,10 +460,11 @@ class TestVerboseMode:
         """
         # Run with verbose flag
         result = subprocess.run(
-            [sys.executable, str(SCRIPT_PATH), "--dry-run", "--verbose", "--skip-validation"],
+            [sys.executable, "-m", MODULE_NAME, "--dry-run", "--verbose", "--skip-validation"],
             capture_output=True,
             text=True,
             timeout=30,
+            cwd=str(SRC_DIR),
         )
 
         assert result.returncode == 0, f"Verbose dry-run failed: {result.stderr}"
